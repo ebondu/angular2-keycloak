@@ -15,15 +15,14 @@
     "url": "https://github.com/ebondu/angular2-keycloak.git"
   },
   "author": {
-    "name": "emilienbondu",
-    "email": "emilien.bondu@gmail.com"
+    "name": "emilienbondu"
   },
   "keywords": [
     "angular",
     "angular2",
     "Keycloak"
   ],
-  "license": "MIT",
+  "license": "Apache2",
   "bugs": {
     "url": "https://github.com/ebondu/angular2-keycloak.git/issues"
   },

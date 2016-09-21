@@ -24,5 +24,5 @@ $ npm run lint
 
 ## License
 
-MIT © [emilienbondu](emilien.bondu@gmail.com)
+Apache2 © [emilienbondu](emilien.bondu@gmail.com)
 # angular2-keycloak

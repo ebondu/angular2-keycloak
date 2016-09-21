@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Http, Headers, RequestOptionsArgs, URLSearchParams} from '@angular/http';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 
 import {Observable, BehaviorSubject} from 'rxjs/Rx';
 import 'rxjs/operator/map';
@@ -16,60 +16,58 @@ export class Keycloak {
 
   // internal objects
   static config: any;
-  static adapter:any;
-  static resourceAccess:any;
-  static callback_id:number = 0;
-  static loginIframe:LoginIframe;
-  private refreshQueue:any = [];
-  static callbackStorage:any;
-  static timeSkew:number;
+  static adapter: any;
+  static resourceAccess: any;
+  static callback_id: number = 0;
+  static loginIframe: LoginIframe;
+  static callbackStorage: any;
+  static timeSkew: number;
 
   // protocol conf
-  static authenticated:boolean = false;
-  static initialized:boolean = false;
-  static loginRequired:boolean = true;
-  static responseMode:string;
-  static responseType:string;
+  static authenticated: boolean = false;
+  static initialized: boolean = false;
+  static loginRequired: boolean = true;
+  static responseMode: string;
+  static responseType: string;
 
   // Token objects
-  static tokenParsed:any;
-  static idTokenParsed:any;
-  static refreshTokenParsed:any;
-  static token:string;
-  static idToken:string;
-  static refreshToken:string;
-  static tokenTimeoutHandle:any;
-  static subject:string;
-  private userInfo:any;
-  static sessionId:string;
-  private profile:any;
+  static tokenParsed: any;
+  static idTokenParsed: any;
+  static refreshTokenParsed: any;
+  static token: string;
+  static idToken: string;
+  static refreshToken: string;
+  static tokenTimeoutHandle: any;
+  static subject: string;
+  static sessionId: string;
+
 
   // OIDC client properties
-  static flow:string;
-  static clientId:string;
-  static clientSecret:string;
-  static authServerUrl:string;
-  static realm:string;
-  static realmAccess:any;
+  static flow: string;
+  static clientId: string;
+  static clientSecret: string;
+  static authServerUrl: string;
+  static realm: string;
+  static realmAccess: any;
 
   // callback functions
-  static onTokenExpired:any;
-  static onAuthSuccess:any;
-  static onAuthLogout:any;
-  static onAuthError:any;
-  public onReady:any;
-
+  static onTokenExpired: any;
+  static onAuthSuccess: any;
+  static onAuthLogout: any;
+  static onAuthError: any;
 
   // observers
-  static initializedBehaviourSubject : BehaviorSubject<boolean> = new BehaviorSubject(false);
+  static initializedBehaviourSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
   static initializedObs: Observable<boolean> = Keycloak.initializedBehaviourSubject.asObservable();
-  static authenticatedBehaviourSubject : BehaviorSubject<boolean> = new BehaviorSubject(false);
+  static authenticatedBehaviourSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
   static authenticatedObs: Observable<boolean> = Keycloak.authenticatedBehaviourSubject.asObservable();
 
+  public onReady: any;
+  private refreshQueue: any = [];
+
   // public constructor
-  constructor(private http:Http, private route: ActivatedRoute, private router: Router) {
+  constructor(private http: Http, private router: Router) {
     Keycloak.loginIframe = new LoginIframe(true, [], 5);
-    //Keycloak.config = {'url':'keycloak.json'};
   }
 
   static setAuthenticted() {
@@ -77,18 +75,18 @@ export class Keycloak {
   }
 
 
-  get tokenParsed():any {
+  get tokenParsed(): any {
     return Keycloak.tokenParsed;
   }
 
-  get authenticated():boolean {
+  get authenticated(): boolean {
     return Keycloak.authenticated;
   }
-  get initialized():boolean {
+  get initialized(): boolean {
     return Keycloak.initialized;
   }
 
-  public init(initOptions:any) {
+  public init(initOptions: any) {
     Keycloak.authenticated = false;
 
     Keycloak.callbackStorage = this.createCallbackStorage();
@@ -168,9 +166,9 @@ export class Keycloak {
     });
   }
 
-  public loadConfig(url:string):Observable<boolean> {
-    return new Observable<boolean>((observer:any) => {
-      let configUrl:string;
+  public loadConfig(url: string): Observable<boolean> {
+    return new Observable<boolean>((observer: any) => {
+      let configUrl: string;
       if (!Keycloak.config) {
         configUrl = 'keycloak.json';
       } else if (typeof Keycloak.config === 'string') {
@@ -218,11 +216,11 @@ export class Keycloak {
   }
 
 
-  public processInit(initOptions:any):Observable<boolean> {
-    return new Observable<boolean>((observer:any) => {
+  public processInit(initOptions: any): Observable<boolean> {
+    return new Observable<boolean>((observer: any) => {
 
       let callback = this.parseCallback(window.location.href);
-      let initPromise:any = Keycloak.createPromise;
+      let initPromise: any = Keycloak.createPromise;
 
       if (callback) {
         this.setupCheckLoginIframe();
@@ -245,26 +243,23 @@ export class Keycloak {
               });
             });
           } else {
-            //initPromise.setSuccess();
             observer.next(true);
           }
         } else if (initOptions.onLoad) {
           this.onLoad(initOptions);
         } else {
-          //initPromise.setSuccess();
           observer.next(true);
         }
       } else {
-        //initPromise.setSuccess();
         observer.next(true);
       }
     });
   }
 
 
-  public onLoad(initOptions:any) {
-    let options:any = {};
-    var doLogin = function (prompt:any) {
+  public onLoad(initOptions: any) {
+    let options: any = {};
+    let doLogin = function (prompt: any) {
       if (!prompt) {
         options.prompt = 'none';
       }
@@ -273,7 +268,7 @@ export class Keycloak {
       }).error(function () {
         this.initPromise.setError();
       });
-    }
+    };
 
 
     switch (initOptions.onLoad) {
@@ -299,27 +294,27 @@ export class Keycloak {
   }
 
 
-  static login(options:any) {
+  static login(options: any) {
     return Keycloak.adapter.login(options);
   }
 
-  static createLoginUrl(options:any):string {
+  static createLoginUrl(options: any): string {
     let state = Keycloak.createUUID();
     let nonce = Keycloak.createUUID();
 
     let redirectUri = Keycloak.adapter.redirectUri(options);
     if (options && options.prompt) {
-      redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
+      redirectUri += (redirectUri.indexOf('?') === -1 ? '?' : '&') + 'prompt=' + options.prompt;
     }
 
     Keycloak.callbackStorage.add({state: state, nonce: nonce, redirectUri: redirectUri});
 
     let action = 'auth';
-    if (options && options.action == 'register') {
+    if (options && options.action === 'register') {
       action = 'registrations';
     }
 
-    let scope = (options && options.scope) ? "openid " + options.scope : "openid";
+    let scope = (options && options.scope) ? 'openid ' + options.scope : 'openid';
 
     let url = Keycloak.getRealmUrl()
       + '/protocol/openid-connect/' + action
@@ -354,11 +349,11 @@ export class Keycloak {
     return url;
   }
 
-  public logout(options:any) {
+  public logout(options: any) {
     return Keycloak.adapter.logout(options);
   }
 
-  static createLogoutUrl(options:any):string {
+  static createLogoutUrl(options: any): string {
     let url = Keycloak.getRealmUrl()
       + '/protocol/openid-connect/logout'
       + '?redirect_uri=' + encodeURIComponent(Keycloak.adapter.redirectUri(options, false));
@@ -366,11 +361,11 @@ export class Keycloak {
     return url;
   }
 
-  public register(options:any) {
+  public register(options: any) {
     return Keycloak.adapter.register(options);
   }
 
-  static createRegisterUrl(options:any):string {
+  static createRegisterUrl(options: any): string {
     if (!options) {
       options = {};
     }
@@ -378,8 +373,8 @@ export class Keycloak {
     return Keycloak.createLoginUrl(options);
   }
 
-  static createAccountUrl(options:any):string {
-    var url = Keycloak.getRealmUrl()
+  static createAccountUrl(options: any): string {
+    let url = Keycloak.getRealmUrl()
       + '/account'
       + '?referrer=' + encodeURIComponent(Keycloak.clientId)
       + '&referrer_uri=' + encodeURIComponent(Keycloak.adapter.redirectUri(options));
@@ -391,38 +386,38 @@ export class Keycloak {
     return Keycloak.adapter.accountManagement();
   }
 
-  public hasRealmRole(role:string):boolean {
+  public hasRealmRole(role: string): boolean {
     let access = Keycloak.realmAccess;
     return !!access && access.roles.indexOf(role) >= 0;
   }
 
-  public hasResourceRole(role:string, resource:string):boolean {
+  public hasResourceRole(role: string, resource: string): boolean {
     if (!Keycloak.resourceAccess) {
       return false;
     }
 
-    let access:any = Keycloak.resourceAccess[resource || Keycloak.clientId];
+    let access: any = Keycloak.resourceAccess[resource || Keycloak.clientId];
     return !!access && access.roles.indexOf(role) >= 0;
   }
 
-  public loadUserProfile():Observable<any> {
+  public loadUserProfile(): Observable<any> {
     let url = Keycloak.getRealmUrl() + '/account';
     let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.token});
 
-    let options:RequestOptionsArgs = {headers: headers};
+    let options: RequestOptionsArgs = {headers: headers};
     return this.http.get(url, options).map(profile => profile.json());
   }
 
-  public loadUserInfo():Observable<any> {
+  public loadUserInfo(): Observable<any> {
     let url = Keycloak.getRealmUrl() + '/protocol/openid-connect/userinfo';
     let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.token});
 
-    let options:RequestOptionsArgs = {headers: headers};
+    let options: RequestOptionsArgs = {headers: headers};
     return this.http.get(url, options).map(profile => profile);
   }
 
-  static isTokenExpired(minValidity:number):boolean {
-    if (!Keycloak.tokenParsed || (!Keycloak.refreshToken && Keycloak.flow != 'implicit' )) {
+  static isTokenExpired(minValidity: number): boolean {
+    if (!Keycloak.tokenParsed || (!Keycloak.refreshToken && Keycloak.flow !== 'implicit' )) {
       throw 'Not authenticated';
     }
 
@@ -434,27 +429,27 @@ export class Keycloak {
     return expiresIn < 0;
   }
 
-  public updateTokenPub(minValidity:number):Observable<string> {
+  public updateTokenPub(minValidity: number): Observable<string> {
     return Keycloak.updateToken(minValidity);
   }
 
-  static updateToken(minValidity:number):Observable<string> {
+  static updateToken(minValidity: number): Observable<string> {
 
-    return new Observable<string>((observer:any) => {
+    return new Observable<string>((observer: any) => {
 
-      var promise = Keycloak.createPromise();
+      let promise = Keycloak.createPromise();
 
       // if (!Keycloak.tokenParsed || !Keycloak.refreshToken) {
       //   observer.next(false);
       // }
       minValidity = minValidity || 5;
 
-      var exec = function () {
+      let exec = function () {
         if (!Keycloak.isTokenExpired(minValidity)) {
           observer.next(this.token);
         } else {
 
-          let params:URLSearchParams = new URLSearchParams();
+          let params: URLSearchParams = new URLSearchParams();
           params.set('grant_type', 'refresh_token');
           params.set('refresh_token', this.refreshToken);
 
@@ -462,7 +457,7 @@ export class Keycloak {
 
           this.refreshQueue.push(promise);
 
-          if (this.refreshQueue.length == 1) {
+          if (this.refreshQueue.length === 1) {
 
             let headers = new Headers({'Content-type': 'application/x-www-form-urlencoded'});
 
@@ -470,35 +465,35 @@ export class Keycloak {
               headers.append('Authorization', 'Basic ' + btoa(this.clientId + ':' + this.clientSecret));
             } else {
               params.set('client_id', this.clientId);
-              //params += '&client_id=' + encodeURIComponent(this.clientId);
+              // params += '&client_id=' + encodeURIComponent(this.clientId);
             }
 
-            var timeLocal = new Date().getTime();
+            let timeLocal = new Date().getTime();
 
-            let options:RequestOptionsArgs = {headers: headers, withCredentials:true};
+            let options: RequestOptionsArgs = {headers: headers, withCredentials: true};
 
-            return this.http.post(url, params, options).map((token:any) => {
+            return this.http.post(url, params, options).map((token: any) => {
               timeLocal = (timeLocal + new Date().getTime()) / 2;
 
               let tokenResponse = JSON.parse(token);
               Keycloak.setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], true);
 
-              this.timeSkew = Math.floor(timeLocal / 1000) - this.tokenParsed.iat;
-              observer.next(this.token);
+              Keycloak.timeSkew = Math.floor(timeLocal / 1000) - this.tokenParsed.iat;
+              observer.next(tokenResponse);
 
-              this.onAuthRefreshSuccess && this.onAuthRefreshSuccess();
-              for (let p:any = this.refreshQueue.pop(); p != null; p = this.refreshQueue.pop()) {
+
+              for (let p: any = this.refreshQueue.pop(); p != null; p = this.refreshQueue.pop()) {
                 p.setSuccess(true);
               }
-            }).error((err:any) => {
-              this.onAuthRefreshError && this.onAuthRefreshError();
+            }).error((err: any) => {
+
               for (let p = this.refreshQueue.pop(); p != null; p = this.refreshQueue.pop()) {
                 p.setError(true);
               }
             });
           }
         }
-      }
+      };
 
       if (Keycloak.loginIframe.enable) {
         let iframePromise = Keycloak.checkLoginIframe();
@@ -515,7 +510,7 @@ export class Keycloak {
     });
   }
 
-  static clearToken(initOptions:any) {
+  static clearToken(initOptions: any) {
     if (Keycloak.token) {
       Keycloak.setToken(null, null, null, true);
       Keycloak.onAuthLogout && Keycloak.onAuthLogout();
@@ -525,31 +520,30 @@ export class Keycloak {
     }
   }
 
-  static getRealmUrl():string {
-    if (Keycloak.authServerUrl.charAt(Keycloak.authServerUrl.length - 1) == '/') {
+  static getRealmUrl(): string {
+    if (Keycloak.authServerUrl.charAt(Keycloak.authServerUrl.length - 1) === '/') {
       return Keycloak.authServerUrl + 'realms/' + encodeURIComponent(Keycloak.realm);
     } else {
       return Keycloak.authServerUrl + '/realms/' + encodeURIComponent(Keycloak.realm);
     }
   }
 
-  public getOrigin():string {
+  public getOrigin(): string {
     if (!window.location.origin) {
-      return window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+      return window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
     } else {
       return window.location.origin;
     }
   }
 
-  public processCallback(oauth:any, promise:any) {
+  public processCallback(oauth: any, promise: any) {
     let code = oauth.code;
-    var error = oauth.error;
-    var prompt = oauth.prompt;
-
-    var timeLocal = new Date().getTime();
+    let error = oauth.error;
+    let prompt = oauth.prompt;
+    let timeLocal = new Date().getTime();
 
     if (error) {
-      if (prompt != 'none') {
+      if (prompt !== 'none') {
         let errorData = {error: error, error_description: oauth.error_description};
         Keycloak.onAuthError && Keycloak.onAuthError(errorData);
         promise && promise.setError(errorData);
@@ -557,37 +551,26 @@ export class Keycloak {
         promise && promise.setSuccess();
       }
       return;
-    } else if ((Keycloak.flow != 'standard') && (oauth.access_token || oauth.id_token)) {
+    } else if ((Keycloak.flow !== 'standard') && (oauth.access_token || oauth.id_token)) {
       authSuccess(oauth.access_token, null, oauth.id_token, true);
     }
 
-    if ((Keycloak.flow != 'implicit') && code) {
+    if ((Keycloak.flow !== 'implicit') && code) {
 
       let url = Keycloak.getRealmUrl() + '/protocol/openid-connect/token';
-      let params:URLSearchParams = new URLSearchParams();
+      let params: URLSearchParams = new URLSearchParams();
       params.set('code', code);
       params.set('grant_type', 'authorization_code');
 
       let headers = new Headers({'Content-type': 'application/x-www-form-urlencoded'});
 
-      // let req = new XMLHttpRequest();
-      // req.open('POST', url, true);
-      // req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-
       if (Keycloak.clientId && Keycloak.clientSecret) {
         headers.append('Authorization', 'Basic ' + btoa(Keycloak.clientId + ':' + Keycloak.clientSecret));
-        //req.setRequestHeader('Authorization', 'Basic ' + btoa(this.clientId + ':' + this.clientSecret));
       } else {
         params.set('client_id', Keycloak.clientId);
-        //params += '&client_id=' + encodeURIComponent(this.clientId);
       }
       params.set('redirect_uri', oauth.redirectUri);
-      //params += '&redirect_uri=' + oauth.redirectUri;
-
-
-      // req.withCredentials = true;
-
-      let options:RequestOptionsArgs = {headers: headers, withCredentials:true};
+      let options: RequestOptionsArgs = {headers: headers, withCredentials: true};
 
       this.http.post(url, params, options).subscribe(token => {
         let tokenResponse = token.json();
@@ -597,14 +580,14 @@ export class Keycloak {
 
     }
 
-    function authSuccess(accessToken:string, refreshToken:string, idToken:string, fulfillPromise:any) {
+    function authSuccess(accessToken: string, refreshToken: string, idToken: string, fulfillPromise: any) {
       timeLocal = (timeLocal + new Date().getTime()) / 2;
 
       Keycloak.setToken(accessToken, refreshToken, idToken, true);
 
-      if ((Keycloak.tokenParsed && Keycloak.tokenParsed.nonce != oauth.storedNonce) ||
-        (Keycloak.refreshTokenParsed && Keycloak.refreshTokenParsed.nonce != oauth.storedNonce) ||
-        (Keycloak.idTokenParsed && Keycloak.idTokenParsed.nonce != oauth.storedNonce)) {
+      if ((Keycloak.tokenParsed && Keycloak.tokenParsed.nonce !== oauth.storedNonce) ||
+        (Keycloak.refreshTokenParsed && Keycloak.refreshTokenParsed.nonce !== oauth.storedNonce) ||
+        (Keycloak.idTokenParsed && Keycloak.idTokenParsed.nonce !== oauth.storedNonce)) {
 
         console.log('invalid nonce!');
         Keycloak.clearToken({});
@@ -620,7 +603,7 @@ export class Keycloak {
   }
 
 
-  static setToken(token:string, refreshToken:string, idToken:string, useTokenTime:boolean) {
+  static setToken(token: string, refreshToken: string, idToken: string, useTokenTime: boolean) {
     if (Keycloak.tokenTimeoutHandle) {
       clearTimeout(Keycloak.tokenTimeoutHandle);
       Keycloak.tokenTimeoutHandle = null;
@@ -674,7 +657,7 @@ export class Keycloak {
     }
   }
 
-  static decodeToken(str:string):string {
+  static decodeToken(str: string): string {
     str = str.split('.')[1];
 
     str = str.replace('/-/g', '+');
@@ -695,17 +678,16 @@ export class Keycloak {
     str = (str + '===').slice(0, str.length + (str.length % 4));
     str = str.replace(/-/g, '+').replace(/_/g, '/');
 
-    //str = decodeURIComponent(escape(atob(str)));
     str = decodeURIComponent(atob(str));
 
     str = JSON.parse(str);
     return str;
   }
 
-  static createUUID():string {
-    let s:any = [];
+  static createUUID(): string {
+    let s: any = [];
     let hexDigits = '0123456789abcdef';
-    for (var i = 0; i < 36; i++) {
+    for (let i = 0; i < 36; i++) {
       s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
     }
     s[14] = '4';
@@ -716,14 +698,14 @@ export class Keycloak {
   }
 
 
-  static createCallbackId():string {
+  static createCallbackId(): string {
     let id = '<id: ' + (Keycloak.callback_id++) + (Math.random()) + '>';
     return id;
   }
 
-  public parseCallback(url:string):any {
-    let oauth:any = CallbackParser.parseUri(url, Keycloak.responseMode);
-    let state:string = oauth.state;
+  public parseCallback(url: string): any {
+    let oauth: any = CallbackParser.parseUri(url, Keycloak.responseMode);
+    let state: string = oauth.state;
     let oauthState = Keycloak.callbackStorage.get(state);
 
     if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
@@ -739,16 +721,16 @@ export class Keycloak {
   }
 
   static createPromise() {
-    let p:any = {
-      setSuccess: function (result:any) {
-        p.success = true;
+    let p: any = {
+      setSuccess: function (result: any) {
+        p.success = <any>true;
         p.result = result;
         if (p.successCallback) {
           p.successCallback(result);
         }
       },
 
-      setError: function (result:any) {
+      setError: function (result: any) {
         p.error = true;
         p.result = result;
         if (p.errorCallback) {
@@ -757,7 +739,7 @@ export class Keycloak {
       },
 
       promise: {
-        success: function (callback:any) {
+        success: function (callback: any) {
           if (p.success) {
             callback(p.result);
           } else if (!p.error) {
@@ -765,7 +747,7 @@ export class Keycloak {
           }
           return p.promise;
         },
-        error: function (callback:any) {
+        error: function (callback: any) {
           if (p.error) {
             callback(p.result);
           } else if (!p.success) {
@@ -774,7 +756,7 @@ export class Keycloak {
           return p.promise;
         }
       }
-    }
+    };
     return p;
   }
 
@@ -791,8 +773,15 @@ export class Keycloak {
       return promise.promise;
     }
 
-    let iframe:any = document.createElement('iframe');
+    let iframe: any = document.createElement('iframe');
     Keycloak.loginIframe.iframe = iframe;
+
+    let check = function () {
+      Keycloak.checkLoginIframe();
+      if (this.token) {
+        setTimeout(check, this.loginIframe.interval * 1000);
+      }
+    };
 
     iframe.onload = function () {
       let realmUrl = Keycloak.getRealmUrl();
@@ -804,14 +793,15 @@ export class Keycloak {
       promise.setSuccess();
 
       setTimeout(check, Keycloak.loginIframe.interval * 1000);
-    }
+    };
 
-    let src = Keycloak.getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html?client_id=' + encodeURIComponent(Keycloak.clientId) + '&origin=' + this.getOrigin();
+    let src = Keycloak.getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html?client_id='
+        + encodeURIComponent(Keycloak.clientId) + '&origin=' + this.getOrigin();
     iframe.setAttribute('src', src);
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
-    var messageCallback = function (event:any) {
+    let messageCallback = function (event: any) {
       let data = JSON.parse(event.data);
       if (event.origin !== Keycloak.loginIframe.iframeOrigin) {
         return;
@@ -828,7 +818,7 @@ export class Keycloak {
 
       delete Keycloak.loginIframe.callbackMap[data.callbackId];
 
-      if ((!this.sessionId || this.sessionId == data.session) && data.loggedIn) {
+      if ((!this.sessionId || this.sessionId === data.session) && data.loggedIn) {
         promise.setSuccess();
       } else {
         Keycloak.clearToken({});
@@ -837,21 +827,14 @@ export class Keycloak {
     };
     window.addEventListener('message', messageCallback, false);
 
-    let check = function () {
-      Keycloak.checkLoginIframe();
-      if (this.token) {
-        setTimeout(check, this.loginIframe.interval * 1000);
-      }
-    };
-
     return promise.promise;
   }
 
   static checkLoginIframe() {
-    var promise = Keycloak.createPromise();
+    let promise = Keycloak.createPromise();
 
     if (Keycloak.loginIframe.iframe && Keycloak.loginIframe.iframeOrigin) {
-      let msg:any = {};
+      let msg: any = {};
       msg.callbackId = Keycloak.createCallbackId();
       Keycloak.loginIframe.callbackMap[msg.callbackId] = promise;
       let origin = Keycloak.loginIframe.iframeOrigin;
@@ -863,23 +846,23 @@ export class Keycloak {
     return promise.promise;
   }
 
-  public loadAdapter(type:String): any {
-    if (!type || type == 'default') {
+  public loadAdapter(type: string): any {
+    if (!type || type === 'default') {
 
       return new DefaultAdapter(this.router);
     }
 
-    if (type == 'cordova') {
+    if (type === 'cordova') {
       Keycloak.loginIframe.enable = false;
 
 
 
       return {
-        login: function (options:any) {
+        login: function (options: any) {
           let promise = Keycloak.createPromise();
 
           let o = 'location=no';
-          if (options && options.prompt == 'none') {
+          if (options && options.prompt === 'none') {
             o += ',hidden=yes';
           }
 
@@ -888,8 +871,8 @@ export class Keycloak {
 
           let completed = false;
 
-          ref.addEventListener('loadstart', function (event:any) {
-            if (event.url.indexOf('http://localhost') == 0) {
+          ref.addEventListener('loadstart', function (event: any) {
+            if (event.url.indexOf('http://localhost') === 0) {
               let callback = this.parseCallback(event.url);
               this.processCallback(callback, promise);
               ref.close();
@@ -897,10 +880,10 @@ export class Keycloak {
             }
           });
 
-          ref.addEventListener('loaderror', function (event:any) {
+          ref.addEventListener('loaderror', function (event: any) {
             if (!completed) {
-              if (event.url.indexOf('http://localhost') == 0) {
-                var callback = this.parseCallback(event.url);
+              if (event.url.indexOf('http://localhost') === 0) {
+                let callback = this.parseCallback(event.url);
                 this.processCallback(callback, promise);
                 ref.close();
                 completed = true;
@@ -914,22 +897,22 @@ export class Keycloak {
           return promise.promise;
         },
 
-        logout: function (options:any) {
+        logout: function (options: any) {
           let promise = Keycloak.createPromise();
 
           let logoutUrl = this.createLogoutUrl(options);
           let ref = window.open(logoutUrl, '_blank', 'location=no,hidden=yes');
 
-          let error:any;
+          let error: any;
 
-          ref.addEventListener('loadstart', function (event:any) {
-            if (event.url.indexOf('http://localhost') == 0) {
+          ref.addEventListener('loadstart', function (event: any) {
+            if (event.url.indexOf('http://localhost') === 0) {
               ref.close();
             }
           });
 
-          ref.addEventListener('loaderror', function (event:any) {
-            if (event.url.indexOf('http://localhost') == 0) {
+          ref.addEventListener('loaderror', function (event: any) {
+            if (event.url.indexOf('http://localhost') === 0) {
               ref.close();
             } else {
               error = true;
@@ -937,7 +920,7 @@ export class Keycloak {
             }
           });
 
-          ref.addEventListener('exit', function (event:any) {
+          ref.addEventListener('exit', function (event: any) {
             if (error) {
               promise.setError();
             } else {
@@ -952,8 +935,8 @@ export class Keycloak {
         register: function () {
           let registerUrl = this.createRegisterUrl();
           let ref = window.open(registerUrl, '_blank', 'location=no');
-          ref.addEventListener('loadstart', function (event:any) {
-            if (event.url.indexOf('http://localhost') == 0) {
+          ref.addEventListener('loadstart', function (event: any) {
+            if (event.url.indexOf('http://localhost') === 0) {
               ref.close();
             }
           });
@@ -962,24 +945,24 @@ export class Keycloak {
         accountManagement: function () {
           let accountUrl = this.createAccountUrl();
           let ref = window.open(accountUrl, '_blank', 'location=no');
-          ref.addEventListener('loadstart', function (event:any) {
-            if (event.url.indexOf('http://localhost') == 0) {
+          ref.addEventListener('loadstart', function (event: any) {
+            if (event.url.indexOf('http://localhost') === 0) {
               ref.close();
             }
           });
         },
 
-        redirectUri: function (options:any):any {
+        redirectUri: function (options: any): any {
           return 'http://localhost';
         }
-      }
+      };
     }
 
     throw 'invalid adapter type: ' + type;
   }
 
 
-  public createCallbackStorage():any {
+  public createCallbackStorage(): any {
     try {
       return new LocalStorage();
     } catch (err) {
@@ -997,17 +980,17 @@ export class DefaultAdapter {
 
   }
 
-  public login(options:any) {
+  public login(options: any) {
     window.location.href = Keycloak.createLoginUrl(options);
 
   }
 
-  public logout(options:any) {
+  public logout(options: any) {
     window.location.href = Keycloak.createLogoutUrl(options);
 
   }
 
-  public register(options:any) {
+  public register(options: any) {
     window.location.href = Keycloak.createRegisterUrl(options);
   }
 
@@ -1015,20 +998,20 @@ export class DefaultAdapter {
     window.location.href = Keycloak.createAccountUrl({});
 
   }
-  public redirectUri(options:any, encodeHash:boolean):string {
+  public redirectUri(options: any, encodeHash: boolean): string {
 
-    if (arguments.length == 1) {
+    if (arguments.length === 1) {
       encodeHash = true;
     }
 
     if (options && options.redirectUri) {
       return options.redirectUri;
     } else {
-      //let redirectUri = location.href;
-      let redirectUri = location.origin+this.router.url;
+      let redirectUri = location.origin + this.router.url;
       if (location.hash && encodeHash) {
         redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
-        redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
+        redirectUri += (redirectUri.indexOf('?') === -1 ? '?' : '&') + 'redirect_fragment=' +
+            encodeURIComponent(location.hash.substring(1));
       }
       return redirectUri;
     }
@@ -1038,30 +1021,25 @@ export class DefaultAdapter {
 
 
 export class LoginIframe {
-  public iframe:any;
-  public iframeOrigin:any;
+  public iframe: any;
+  public iframeOrigin: any;
 
-  constructor(public enable:boolean, public callbackMap:any, public interval:number) {
+  constructor(public enable: boolean, public callbackMap: any, public interval: number) {
 
   }
 }
 
 export class LocalStorage {
 
-  //localStorage.setItem('kc-test', 'test');
-  //localStorage.removeItem('kc-test');
-
-  //let cs = this;
-
   public clearExpired() {
     let time = new Date().getTime();
-    for (var i = 1; i <= localStorage.length; i++) {
+    for (let i = 1; i <= localStorage.length; i++) {
       let key = localStorage.key(i);
-      if (key && key.indexOf('kc-callback-') == 0) {
+      if (key && key.indexOf('kc-callback-') === 0) {
         let value = localStorage.getItem(key);
         if (value) {
           try {
-            var expires = JSON.parse(value).expires;
+            let expires = JSON.parse(value).expires;
             if (!expires || expires < time) {
               localStorage.removeItem(key);
             }
@@ -1073,7 +1051,7 @@ export class LocalStorage {
     }
   }
 
-  public get(state:string) {
+  public get(state: string) {
     if (!state) {
       return;
     }
@@ -1089,10 +1067,10 @@ export class LocalStorage {
     return value;
   };
 
-  public add(state:any) {
+  public add(state: any) {
     this.clearExpired();
 
-    var key = 'kc-callback-' + state.state;
+    let key = 'kc-callback-' + state.state;
     state.expires = new Date().getTime() + (60 * 60 * 1000);
     localStorage.setItem(key, JSON.stringify(state));
   };
@@ -1100,7 +1078,7 @@ export class LocalStorage {
 
 export class CookieStorage {
 
-  public get(state:string) {
+  public get(state: string) {
     if (!state) {
       return;
     }
@@ -1112,37 +1090,37 @@ export class CookieStorage {
     }
   };
 
-  public add(state:any) {
+  public add(state: any) {
     this.setCookie('kc-callback-' + state.state, JSON.stringify(state), this.cookieExpiration(60));
   };
 
-  public removeItem(key:any) {
+  public removeItem(key: any) {
     this.setCookie(key, '', this.cookieExpiration(-100));
   };
 
-  public cookieExpiration(minutes:number) {
+  public cookieExpiration(minutes: number) {
     let exp = new Date();
     exp.setTime(exp.getTime() + (minutes * 60 * 1000));
     return exp;
   };
 
-  public getCookie = function (key:any) {
+  public getCookie = function (key: any) {
     let name = key + '=';
     let ca = document.cookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
-      while (c.charAt(0) == ' ') {
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') {
         c = c.substring(1);
       }
-      if (c.indexOf(name) == 0) {
+      if (c.indexOf(name) === 0) {
         return c.substring(name.length, c.length);
       }
     }
     return '';
   };
 
-  public setCookie(key:string, value:string, expirationDate:Date) {
-    var cookie = key + '=' + value + '; '
+  public setCookie(key: string, value: string, expirationDate: Date) {
+    let cookie = key + '=' + value + '; '
       + 'expires=' + expirationDate.toUTCString() + '; ';
     document.cookie = cookie;
   }
@@ -1152,20 +1130,20 @@ export class CookieStorage {
 
 export class CallbackParser {
 
-  static initialParse(uriToParse:string, responseMode:string) {
-    let baseUri:string;
-    let queryString:string;
-    let fragmentString:string;
+  static initialParse(uriToParse: string, responseMode: string) {
+    let baseUri: string;
+    let queryString: string;
+    let fragmentString: string;
 
-    let questionMarkIndex = uriToParse.indexOf("?");
-    let fragmentIndex = uriToParse.indexOf("#", questionMarkIndex + 1);
-    if (questionMarkIndex == -1 && fragmentIndex == -1) {
+    let questionMarkIndex = uriToParse.indexOf('?');
+    let fragmentIndex = uriToParse.indexOf('#', questionMarkIndex + 1);
+    if (questionMarkIndex === -1 && fragmentIndex === -1) {
       baseUri = uriToParse;
-    } else if (questionMarkIndex != -1) {
+    } else if (questionMarkIndex !== -1) {
       baseUri = uriToParse.substring(0, questionMarkIndex);
       queryString = uriToParse.substring(questionMarkIndex + 1);
-      if (fragmentIndex != -1) {
-        fragmentIndex = queryString.indexOf("#");
+      if (fragmentIndex !== -1) {
+        fragmentIndex = queryString.indexOf('#');
         fragmentString = queryString.substring(fragmentIndex + 1);
         queryString = queryString.substring(0, fragmentIndex);
       }
@@ -1177,10 +1155,10 @@ export class CallbackParser {
     return {baseUri: baseUri, queryString: queryString, fragmentString: fragmentString};
   }
 
-  static parseParams(paramString:string) {
-    let result:any = {};
+  static parseParams(paramString: string) {
+    let result: any = {};
     let params = paramString.split('&');
-    for (var i = 0; i < params.length; i++) {
+    for (let i = 0; i < params.length; i++) {
       let p = params[i].split('=');
       let paramName = decodeURIComponent(p[0]);
       let paramValue = decodeURIComponent(p[1]);
@@ -1189,10 +1167,10 @@ export class CallbackParser {
     return result;
   }
 
-  static handleQueryParam(paramName:string, paramValue:string, oauth:any):boolean {
+  static handleQueryParam(paramName: string, paramValue: string, oauth: any): boolean {
     let supportedOAuthParams = ['code', 'state', 'error', 'error_description'];
 
-    for (var i = 0; i < supportedOAuthParams.length; i++) {
+    for (let i = 0; i < supportedOAuthParams.length; i++) {
       if (paramName === supportedOAuthParams[i]) {
         oauth[paramName] = paramValue;
         return true;
@@ -1202,16 +1180,16 @@ export class CallbackParser {
   }
 
 
-  static parseUri(uriToParse:string, responseMode:string) {
+  static parseUri(uriToParse: string, responseMode: string) {
     let parsedUri = CallbackParser.initialParse(decodeURIComponent(uriToParse), responseMode);
 
-    let queryParams:any = {};
+    let queryParams: any = {};
     if (parsedUri.queryString) {
       queryParams = CallbackParser.parseParams(parsedUri.queryString);
     }
 
-    let oauth:any = {newUrl: parsedUri.baseUri};
-    for (var param in queryParams) {
+    let oauth: any = {newUrl: parsedUri.baseUri};
+    for (let param in queryParams) {
       switch (param) {
         case 'redirect_fragment':
           oauth.fragment = queryParams[param];
@@ -1220,15 +1198,15 @@ export class CallbackParser {
           oauth.prompt = queryParams[param];
           break;
         default:
-          if (responseMode != 'query' || !CallbackParser.handleQueryParam(param, queryParams[param], oauth)) {
-            oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + queryParams[param];
+          if (responseMode !== 'query' || !CallbackParser.handleQueryParam(param, queryParams[param], oauth)) {
+            oauth.newUrl += (oauth.newUrl.indexOf('?') === -1 ? '?' : '&') + param + '=' + queryParams[param];
           }
           break;
       }
     }
 
     if (responseMode === 'fragment') {
-      var fragmentParams:any = {};
+      let fragmentParams: any = {};
       if (parsedUri.fragmentString) {
         fragmentParams = CallbackParser.parseParams(parsedUri.fragmentString);
       }
