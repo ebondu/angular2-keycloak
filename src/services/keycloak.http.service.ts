@@ -28,8 +28,11 @@ export class KeycloakHttp {
     static readyBehaviourSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
     static readyObs: Observable<boolean> = KeycloakHttp.readyBehaviourSubject.asObservable();
 
+    private MAX_UNAUTHORIZED_ATTEMPTS: number = 2;
+
     // constructor
     constructor(private http: Http, private keycloakAuth: KeycloakAuthorization, private keycloak: Keycloak) {
+        this.keycloak.init({});
         this.keycloakAuth.init();
     }
 
@@ -38,95 +41,98 @@ export class KeycloakHttp {
         // console.info("GET");
         options = options || {};
         options.method = RequestMethod.Get;
-        return this.request(url, 0, options);
+        return this.request(url, 1, options);
     }
 
     post(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Post;
         options.body = body;
-        return this.request(url, 0, options);
+        return this.request(url, 1, options);
     }
 
     put(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Put;
         options.body = body;
-        return this.request(url, 0, options);
+        return this.request(url, 1, options);
     }
 
     delete(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Delete;
-        return this.request(url, 0, options);
+        return this.request(url, 1, options);
     }
 
     patch(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Patch;
         options.body = body;
-        return this.request(url, 0, options);
+        return this.request(url, 1, options);
     }
 
     head(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Head;
-        return this.request(url, 0, options);
+        return this.request(url, 1, options);
     }
 
     private request(url: string | Request, count: number, options?: RequestOptionsArgs): Observable<Response> {
 
         if (!KeycloakHttp.readyBehaviourSubject.getValue()) {
 
-            KeycloakAuthorization.initializedObs.filter(init => init === true).subscribe(() => {
-                // console.log("keycloak authz initialized...");
+            KeycloakAuthorization.initializedObs.take(1).filter(init => init === true).subscribe(() => {
+                console.log('keycloak authz initialized...');
             });
 
-            Keycloak.initializedObs.filter(init => init === true).subscribe(() => {
-                // console.log("keycloak initialized...");
+            Keycloak.initializedObs.take(1).filter(init => init === true).subscribe(() => {
+                console.log('keycloak initialized...');
                 Keycloak.login(true);
             });
 
-            Keycloak.authenticatedObs.filter(auth => auth === true).subscribe(() => {
-                // console.log("keycloak authenticated...");
+            Keycloak.authenticatedObs.take(2).filter(auth => auth === true).subscribe(() => {
+                console.log('keycloak authenticated...');
                 KeycloakHttp.readyBehaviourSubject.next(true);
             });
 
             return KeycloakHttp.readyObs.take(2).filter(ready => ready === true).flatMap(ready => {
-                // console.log("keycloak http ready, re-attempting request...");
-
+                console.log('keycloak http ready, re-attempting request...');
                 return this.request(url, count, options);
 
             });
         } else {
 
             // KC is ready, getting authorization header
-            this.setHeaders(options);
 
-            // calling http with headers
-            return this.http.request(url, options).catch(error => {
+            return this.setHeaders(options).flatMap(options => {
 
-                // error handling
-                let status = error.status;
-                if (status === 403 || status === 401) {
-                    if (error.url.indexOf('/authorize') === -1) {
-                        // auth error handling, observing for authorization
-                        return new Observable((observer: any) => {
+                console.info('using headers ' + options);
+                // calling http with headers
+                return this.http.request(url, options).catch(error => {
 
-                            if (error.headers.get('WWW-Authenticate') != null) {
-                                // requesting authorization to KC server
-                                this.keycloakAuth.authorize(error.headers.get('WWW-Authenticate')).subscribe(token => {
-                                    // notifying observers for authz result token
-                                    observer.next(token);
-                                });
-                            } else {
-                                console.warn('WWW-Authenticate header not found');
-                            }
-                        });
+                    // error handling
+                    let status = error.status;
+                    if ((status === 403 || status === 401) && count < this.MAX_UNAUTHORIZED_ATTEMPTS) {
+                        console.warn('unauthorized!');
+                        if (error.url.indexOf('/authorize') === -1) {
+                            // auth error handling, observing for authorization
+                            return new Observable((observer: any) => {
+
+                                if (error.headers.get('WWW-Authenticate') != null) {
+                                    // requesting authorization to KC server
+                                    this.keycloakAuth.authorize(error.headers.get('WWW-Authenticate')).subscribe(token => {
+                                        // notifying observers for authz result token
+                                        observer.next(token);
+                                    });
+                                } else {
+                                    console.warn('WWW-Authenticate header not found' + error.headers.get('WWW-Authenticate'));
+                                }
+                            });
+                        }
+                    } else {
+                        Observable.throw('server error');
                     }
-                } else {
-                    Observable.throw('server error');
-                }
+                })
             }).flatMap(res => {
                 // Http Response or Authz token
                 if (res instanceof Response) {
@@ -139,22 +145,40 @@ export class KeycloakHttp {
 
                     // Authorization token
                     Keycloak.token = <any>res;
-
+                    count = count + 1;
                     // retrying request with new token
+                    console.log('retrying request with new authorization token');
                     return this.request(url, count, options);
                 }
             });
-
         }
     }
 
     // to add 'Authorization' header
-    private setHeaders(options: RequestOptionsArgs) {
-        let token = Keycloak.token;
-        if (!options.headers) {
-            options.headers = new Headers();
+    private setHeaders(options: RequestOptionsArgs): Observable<RequestOptionsArgs> {
+        return new Observable<RequestOptionsArgs>((observer: any) => {
 
-        }
-        options.headers.set('Authorization', 'Bearer ' + token);
+            console.info('adding headers with options ' + options);
+            let token = Keycloak.token;
+            if (Keycloak.refreshToken) {
+                console.info('checking token');
+                Keycloak.updateToken(5, this.http).subscribe(res => {
+                    token = res;
+                    if (!options.headers) {
+                        options.headers = new Headers();
+                    }
+                    console.info('updated token ' + token);
+                    options.headers.set('Authorization', 'Bearer ' + token);
+                    observer.next(options);
+                });
+            } else {
+                if (!options.headers) {
+                    options.headers = new Headers();
+                }
+                console.info('non updated token ' + token);
+                options.headers.set('Authorization', 'Bearer ' + token);
+                observer.next(options);
+            }
+        });
     }
 }
