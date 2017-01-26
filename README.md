@@ -7,7 +7,7 @@ Native Typescript Keycloak library.
 To install this library, run:
 
 ```bash
-$ npm install angular2-keycloak --save
+$ npm install @ebondu/angular2-keycloak --save
 ```
 
 ## Development
