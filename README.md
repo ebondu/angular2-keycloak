@@ -98,5 +98,5 @@ export class MyClass {
 
 ## License
 
-Apache2 © [emilienbondu](dev.ebondu@gmail.com)
+Apache2 © [ebondu](dev.ebondu@gmail.com)
 # angular2-keycloak
