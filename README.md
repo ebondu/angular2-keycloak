@@ -1,5 +1,7 @@
 # angular2-keycloak
 
+Native Typescript Keycloak library.
+
 ## Installation
 
 To install this library, run:
@@ -27,7 +29,7 @@ $ npm run lint
 Declare Keycloak module in angular app :
 
 ```javascript
-import { Ng2KeycloakModule } from 'angular2-keycloak';
+import { Ng2KeycloakModule } from '@ebondu/angular2-keycloak';
 ...
 
 @NgModule({
@@ -50,7 +52,7 @@ export class AppModule { }
 To login
 
 ```javascript
-import { Keycloak } from 'angular2-keycloak';
+import { Keycloak } from '@ebondu/angular2-keycloak';
 ...
 
 export class MyLoginClass {
@@ -71,7 +73,7 @@ export class MyLoginClass {
 To use keycloak http proxy (authentication / authorization)
 
 ```javascript
-import { KeycloakHttp } from 'angular2-keycloak';
+import { KeycloakHttp } from '@ebondu/angular2-keycloak';
 ...
 
 @Injectable()
@@ -96,5 +98,5 @@ export class MyClass {
 
 ## License
 
-Apache2 © [emilienbondu](emilien.bondu@gmail.com)
+Apache2 © [emilienbondu](dev.ebondu@gmail.com)
 # angular2-keycloak

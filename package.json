@@ -1,7 +1,7 @@
 {
-  "name": "angular2-keycloak",
-  "private": true,
-  "version": "0.1.0",
+  "name": "@ebondu/angular2-keycloak",
+  "private": false,
+  "version": "0.2.0",
   "scripts": {
     "lint": "tslint src/**/*.ts",
     "test": "tsc && karma start",
@@ -15,7 +15,7 @@
     "url": "https://github.com/ebondu/angular2-keycloak.git"
   },
   "author": {
-    "name": "emilienbondu"
+    "name": "ebondu"
   },
   "keywords": [
     "angular",
