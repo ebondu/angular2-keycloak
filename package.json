@@ -20,7 +20,8 @@
   "keywords": [
     "angular",
     "angular2",
-    "Keycloak"
+    "Keycloak",
+    "typescript"
   ],
   "license": "Apache2",
   "bugs": {
