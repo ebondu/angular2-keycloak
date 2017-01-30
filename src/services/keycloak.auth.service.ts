@@ -1,8 +1,8 @@
-import {Injectable} from '@angular/core';
-import {Http, Headers, RequestOptionsArgs} from '@angular/http';
+import { Injectable } from '@angular/core';
+import { Http, Headers, RequestOptionsArgs } from '@angular/http';
 
-import {Observable, BehaviorSubject} from 'rxjs/Rx';
-import {Keycloak} from './keycloak.core.service';
+import { Observable, BehaviorSubject } from 'rxjs/Rx';
+import { Keycloak } from './keycloak.core.service';
 import 'rxjs/operator/map';
 
 /**
@@ -24,7 +24,8 @@ export class KeycloakAuthorization {
 
     public init() {
         if (!KeycloakAuthorization.initializedBehaviourSubject.getValue()) {
-            this.keycloak.loadConfig('keycloak.json').subscribe(status => {
+
+            Keycloak.initializedObs.filter((status: any) => status === true).subscribe(status => {
 
                 let url = Keycloak.authServerUrl + '/realms/' + Keycloak.realm + '/.well-known/uma-configuration';
                 let headers = new Headers({'Accept': 'application/json'});
@@ -38,6 +39,7 @@ export class KeycloakAuthorization {
                 });
             });
         }
+        this.keycloak.init({});
     };
 
     /**

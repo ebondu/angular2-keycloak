@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
     Http,
     RequestMethod,
@@ -8,13 +8,13 @@ import {
     Request
 } from '@angular/http';
 
-import {Observable, BehaviorSubject} from 'rxjs/Rx';
+import { Observable, BehaviorSubject } from 'rxjs/Rx';
 import 'rxjs/operator/map';
 import 'rxjs/operator/filter';
 import 'rxjs/operator/catch';
 
-import {KeycloakAuthorization} from './keycloak.auth.service';
-import {Keycloak} from './keycloak.core.service';
+import { KeycloakAuthorization } from './keycloak.auth.service';
+import { Keycloak } from './keycloak.core.service';
 
 /**
  * A http proxy supporting keycloak auth / authz.
@@ -118,7 +118,7 @@ export class KeycloakHttp {
                             // auth error handling, observing for authorization
                             return new Observable((observer: any) => {
 
-                                if (error.headers.get('WWW-Authenticate') != null) {
+                                if (error.headers.get('WWW-Authenticate') !== null) {
                                     // requesting authorization to KC server
                                     this.keycloakAuth.authorize(error.headers.get('WWW-Authenticate')).subscribe(token => {
                                         // notifying observers for authz result token
@@ -132,7 +132,7 @@ export class KeycloakHttp {
                     } else {
                         Observable.throw('server error');
                     }
-                })
+                });
             }).flatMap(res => {
                 // Http Response or Authz token
                 if (res instanceof Response) {
@@ -162,7 +162,7 @@ export class KeycloakHttp {
             let token = Keycloak.token;
             if (Keycloak.refreshToken) {
                 console.info('checking token');
-                Keycloak.updateToken(5, this.http).subscribe(res => {
+                Keycloak.updateToken(5).subscribe(res => {
                     token = res;
                     if (!options.headers) {
                         options.headers = new Headers();
