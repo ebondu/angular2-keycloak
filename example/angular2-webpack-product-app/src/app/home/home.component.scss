@@ -1,0 +1,14 @@
+// component styles are encapsulated and only applied to their components
+
+a{
+  text-decoration: underline;
+  cursor: auto;
+}
+
+a:hover {
+  color: green;
+}
+
+a:active {
+  color: blue;
+}

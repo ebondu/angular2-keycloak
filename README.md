@@ -95,6 +95,8 @@ export class MyClass {
 }
 ```
 
+## Example
+
 
 ## License
 
