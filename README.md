@@ -97,6 +97,7 @@ export class MyClass {
 
 ## Example
 
+See [`angular2-webpack-product-app`](https://github.com/ebondu/angular2-keycloak/blob/master/example/angular2-webpack-product-app)
 
 ## License
 
