@@ -1,3 +1,20 @@
+/*
+ * Copyright 2017 ebondu and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { Injectable } from '@angular/core';
 import {
     Http,
@@ -12,12 +29,12 @@ import { Observable, BehaviorSubject } from 'rxjs/Rx';
 import 'rxjs/operator/map';
 import 'rxjs/operator/filter';
 import 'rxjs/operator/catch';
-
 import { KeycloakAuthorization } from './keycloak.auth.service';
 import { Keycloak } from './keycloak.core.service';
 
 /**
- * A http proxy supporting keycloak auth / authz.
+ * An Angular http proxy supporting Keycloak auth & authz.
+ * Authenticate user, manage tokens and add authorization header to access to remote Keycloak protected resources.
  */
 
 @Injectable()
@@ -80,25 +97,25 @@ export class KeycloakHttp {
     private request(url: string | Request, count: number, options?: RequestOptionsArgs): Observable<Response> {
 
         if (!KeycloakHttp.readyBehaviourSubject.getValue()) {
-
             KeycloakAuthorization.initializedObs.take(1).filter(init => init === true).subscribe(() => {
-                console.log('keycloak authz initialized...');
+                console.info('KC_HTTP: keycloak authz initialized...');
             });
 
             Keycloak.initializedObs.take(1).filter(init => init === true).subscribe(() => {
-                console.log('keycloak initialized...');
-                Keycloak.login(true);
+                if (!Keycloak.authenticatedBehaviourSubject.getValue()) {
+                    console.info('KC_HTTP: keycloak initialized, go login...');
+                    Keycloak.login(true);
+                }
             });
 
             Keycloak.authenticatedObs.take(2).filter(auth => auth === true).subscribe(() => {
-                console.log('keycloak authenticated...');
+                console.info('KC_HTTP: authentication done...');
                 KeycloakHttp.readyBehaviourSubject.next(true);
             });
 
             return KeycloakHttp.readyObs.take(2).filter(ready => ready === true).flatMap(ready => {
-                console.log('keycloak http ready, re-attempting request...');
+                console.info('KC_HTTP: keycloak is now http ready, re-attempting request...');
                 return this.request(url, count, options);
-
             });
         } else {
 
@@ -106,14 +123,14 @@ export class KeycloakHttp {
 
             return this.setHeaders(options).flatMap(options => {
 
-                console.info('using headers ' + options);
+                console.info('KC_HTTP: using headers ' + options);
                 // calling http with headers
                 return this.http.request(url, options).catch(error => {
 
                     // error handling
                     let status = error.status;
                     if ((status === 403 || status === 401) && count < this.MAX_UNAUTHORIZED_ATTEMPTS) {
-                        console.warn('unauthorized!');
+                        console.info('KC_HTTP: request is unauthorized!');
                         if (error.url.indexOf('/authorize') === -1) {
                             // auth error handling, observing for authorization
                             return new Observable((observer: any) => {
@@ -144,10 +161,10 @@ export class KeycloakHttp {
                 } else {
 
                     // Authorization token
-                    Keycloak.token = <any>res;
+                    Keycloak.accessToken = <any>res;
                     count = count + 1;
                     // retrying request with new token
-                    console.log('retrying request with new authorization token');
+                    console.info('KC_HTTP: retrying request with new authorization token');
                     return this.request(url, count, options);
                 }
             });
@@ -159,7 +176,7 @@ export class KeycloakHttp {
         return new Observable<RequestOptionsArgs>((observer: any) => {
 
             console.info('adding headers with options ' + options);
-            let token = Keycloak.token;
+            let token = Keycloak.accessToken;
             if (Keycloak.refreshToken) {
                 console.info('checking token');
                 Keycloak.updateToken(5).subscribe(res => {
@@ -167,7 +184,7 @@ export class KeycloakHttp {
                     if (!options.headers) {
                         options.headers = new Headers();
                     }
-                    console.info('updated token ' + token);
+                    console.info('returning an updated token');
                     options.headers.set('Authorization', 'Bearer ' + token);
                     observer.next(options);
                 });
@@ -175,7 +192,7 @@ export class KeycloakHttp {
                 if (!options.headers) {
                     options.headers = new Headers();
                 }
-                console.info('non updated token ' + token);
+                console.info('returning the existing token ');
                 options.headers.set('Authorization', 'Bearer ' + token);
                 observer.next(options);
             }

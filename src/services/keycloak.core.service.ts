@@ -1,3 +1,20 @@
+/*
+ * Copyright 2017 ebondu and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { Injectable } from '@angular/core';
 import { Http, Headers, RequestOptionsArgs, URLSearchParams } from '@angular/http';
 import { DefaultAdapter } from '../adapters/keycloak.adapter.default';
@@ -11,8 +28,13 @@ import { LoginIframe } from '../utils/keycloak.utils.loginIframe';
 import { UUID } from '../utils/keycloak.utils.UUID';
 import { Token } from '../utils/keycloak.utils.token';
 
+
 /**
- * Keycloak core classes
+ * Keycloak core classes to manage tokens with a keycloak server.
+ *
+ * Used for login, logout, register, account management, profile.
+ * Provide Angular Observable objects for initialization, authentication, token expiration and errors.
+ *
  */
 
 declare var window: any;
@@ -29,19 +51,13 @@ export class Keycloak {
     static callbackStorage:any;
     static timeSkew:number;
     static http:Http;
-
-    // protocol conf
-    static authenticated:boolean = false;
-    static initialized:boolean = false;
-    static loginRequired:boolean = true;
-    static responseMode:string;
-    static responseType:string;
+    static loginRequired:boolean;
 
     // Token objects
     static tokenParsed:any;
     static idTokenParsed:any;
     static refreshTokenParsed:any;
-    static token:string;
+    static accessToken:string;
     static idToken:string;
     static refreshToken:string;
     static tokenTimeoutHandle:any;
@@ -50,6 +66,8 @@ export class Keycloak {
 
 
     // OIDC client properties
+    static responseMode:string;
+    static responseType:string;
     static flow:string;
     static clientId:string;
     static clientSecret:string;
@@ -71,9 +89,7 @@ export class Keycloak {
     static authErrorObs:Observable<boolean> = Keycloak.authErrorBehaviourSubject.asObservable();
     static tokenExpiredObs:Observable<boolean> = Keycloak.tokenExpiredBehaviourSubject.asObservable();
 
-
-
-    //
+    // Keycloak methods
     static login(options:any) {
         return Keycloak.adapter.login(options);
     }
@@ -86,15 +102,11 @@ export class Keycloak {
 
         return new Observable<string>((observer:any) => {
 
-            // if (!Keycloak.tokenParsed || !Keycloak.refreshToken) {
-            //   observer.next(false);
-            // }
             minValidity = minValidity || 5;
-
 
             if (!Keycloak.isTokenExpired(minValidity)) {
                 console.info('token still valid');
-                observer.next(Keycloak.token);
+                observer.next(Keycloak.accessToken);
             } else {
                 if (Keycloak.isRefreshTokenExpired(5)) {
                     Keycloak.login(Keycloak.config);
@@ -112,7 +124,6 @@ export class Keycloak {
                         headers.append('Authorization', 'Basic ' + btoa(Keycloak.clientId + ': ' + Keycloak.clientSecret));
                     } else {
                         params.set('client_id', this.clientId);
-                        // params += '&client_id=' + encodeURIComponent(this.clientId);
                     }
 
                     let timeLocal = new Date().getTime();
@@ -128,7 +139,6 @@ export class Keycloak {
 
                         Keycloak.timeSkew = Math.floor(timeLocal / 1000) - Keycloak.tokenParsed.iat;
                         observer.next(tokenResponse['access_token']);
-
                     });
                 }
             }
@@ -145,7 +155,7 @@ export class Keycloak {
 
     static loadUserProfile():Observable<any> {
         let url = Keycloak.getRealmUrl() + '/account';
-        let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.token});
+        let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.accessToken});
 
         let options:RequestOptionsArgs = {headers: headers};
         return this.http.get(url, options).map(profile => profile.json());
@@ -153,7 +163,7 @@ export class Keycloak {
 
     static loadUserInfo():Observable<any> {
         let url = Keycloak.getRealmUrl() + '/protocol/openid-connect/userinfo';
-        let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.token});
+        let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.accessToken});
 
         let options:RequestOptionsArgs = {headers: headers};
         return this.http.get(url, options).map(profile => profile);
@@ -200,7 +210,7 @@ export class Keycloak {
     }
 
     static clearToken(initOptions:any) {
-        if (Keycloak.token) {
+        if (Keycloak.accessToken) {
             Keycloak.setToken(null, null, null, true);
             Keycloak.authenticatedBehaviourSubject.next(false);
 
@@ -322,14 +332,6 @@ export class Keycloak {
             if (prompt !== 'none') {
                 let errorData = {error: error, error_description: oauth.error_description};
                 Keycloak.authErrorBehaviourSubject.next(errorData);
-
-                // if (promise !== null) {
-                //     promise.setError(errorData);
-                // }
-            // } else {
-            //     if (promise !== null) {
-            //         promise.setSuccess();
-            //     }
             }
             return;
         } else if ((Keycloak.flow !== 'standard') && (oauth.access_token || oauth.id_token)) {
@@ -386,21 +388,20 @@ export class Keycloak {
     }
 
 
-    static setToken(token:string, refreshToken:string, idToken:string, useTokenTime:boolean) {
+    static setToken(accessToken:string, refreshToken:string, idToken:string, useTokenTime:boolean) {
         if (Keycloak.tokenTimeoutHandle) {
             clearTimeout(Keycloak.tokenTimeoutHandle);
             Keycloak.tokenTimeoutHandle = null;
         }
 
-        if (token) {
-            Keycloak.token = token;
-            Keycloak.tokenParsed = Token.decodeToken(token);
+        if (accessToken) {
+            Keycloak.accessToken = accessToken;
+            Keycloak.tokenParsed = Token.decodeToken(accessToken);
             let sessionId = Keycloak.realm + '/' + Keycloak.tokenParsed.sub;
             if (Keycloak.tokenParsed.session_state) {
                 sessionId = sessionId + '/' + Keycloak.tokenParsed.session_state;
             }
             Keycloak.sessionId = sessionId;
-            Keycloak.authenticated = true;
             Keycloak.authenticatedBehaviourSubject.next(true);
             Keycloak.subject = Keycloak.tokenParsed.sub;
             Keycloak.realmAccess = Keycloak.tokenParsed.realm_access;
@@ -411,13 +412,11 @@ export class Keycloak {
             let expiresIn = Keycloak.tokenParsed.exp - start;
             Keycloak.tokenTimeoutHandle = setTimeout(Keycloak.tokenExpiredBehaviourSubject.next(true), expiresIn * 1000);
         } else {
-            delete Keycloak.token;
+            delete Keycloak.accessToken;
             delete Keycloak.tokenParsed;
             delete Keycloak.subject;
             delete Keycloak.realmAccess;
             delete Keycloak.resourceAccess;
-
-            Keycloak.authenticated = false;
         }
 
         if (refreshToken) {
@@ -467,84 +466,88 @@ export class Keycloak {
     }
 
     public init(initOptions:any) {
-        console.info('initializing Keycloak method');
-        Keycloak.authenticated = false;
+        // should use a better lock
 
-        try {
-            Keycloak.callbackStorage = new LocalStorage();
-        } catch (err) {
-            Keycloak.callbackStorage = new CookieStorage();
-        }
+        if (!Keycloak.initializedBehaviourSubject.getValue()) {
 
-        if (initOptions && initOptions.adapter === 'cordova') {
-            Keycloak.adapter = this.loadAdapter('cordova');
-        } else if (initOptions && initOptions.adapter === 'default') {
-            Keycloak.adapter = this.loadAdapter('default');
-        } else {
-            if (window[<any>'cordova']) {
+            console.info('KC_CORE: initializing...');
+
+            try {
+                Keycloak.callbackStorage = new LocalStorage();
+            } catch (err) {
+                Keycloak.callbackStorage = new CookieStorage();
+            }
+
+            if (initOptions && initOptions.adapter === 'cordova') {
                 Keycloak.adapter = this.loadAdapter('cordova');
-            } else {
+            } else if (initOptions && initOptions.adapter === 'default') {
                 Keycloak.adapter = this.loadAdapter('default');
-            }
-        }
-
-        // options processing
-        if (initOptions) {
-            if (typeof initOptions.checkLoginIframe !== 'undefined') {
-                Keycloak.loginIframe.enable = initOptions.checkLoginIframe;
-            }
-
-            if (initOptions.checkLoginIframeInterval) {
-                Keycloak.loginIframe.interval = initOptions.checkLoginIframeInterval;
-            }
-
-            if (initOptions.onLoad === 'login-required') {
-                Keycloak.loginRequired = true;
-            }
-
-            if (initOptions.responseMode) {
-                if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
-                    Keycloak.responseMode = initOptions.responseMode;
+            } else {
+                if (window[<any>'cordova']) {
+                    Keycloak.adapter = this.loadAdapter('cordova');
                 } else {
-                    throw 'Invalid value for responseMode';
+                    Keycloak.adapter = this.loadAdapter('default');
                 }
             }
 
-            if (initOptions.flow) {
-                switch (initOptions.flow) {
-                    case 'standard':
-                        Keycloak.responseType = 'code';
-                        break;
-                    case 'implicit':
-                        Keycloak.responseType = 'id_token token';
-                        break;
-                    case 'hybrid':
-                        Keycloak.responseType = 'code id_token token';
-                        break;
-                    default:
-                        throw 'Invalid value for flow';
+            // options processing
+            if (initOptions) {
+                if (typeof initOptions.checkLoginIframe !== 'undefined') {
+                    Keycloak.loginIframe.enable = initOptions.checkLoginIframe;
                 }
-                Keycloak.flow = initOptions.flow;
+
+                if (initOptions.checkLoginIframeInterval) {
+                    Keycloak.loginIframe.interval = initOptions.checkLoginIframeInterval;
+                }
+
+                if (initOptions.onLoad === 'login-required') {
+                    Keycloak.loginRequired = true;
+                }
+
+                if (initOptions.responseMode) {
+                    if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
+                        Keycloak.responseMode = initOptions.responseMode;
+                    } else {
+                        throw 'Invalid value for responseMode';
+                    }
+                }
+
+                if (initOptions.flow) {
+                    switch (initOptions.flow) {
+                        case 'standard':
+                            Keycloak.responseType = 'code';
+                            break;
+                        case 'implicit':
+                            Keycloak.responseType = 'id_token token';
+                            break;
+                        case 'hybrid':
+                            Keycloak.responseType = 'code id_token token';
+                            break;
+                        default:
+                            throw 'Invalid value for flow';
+                    }
+                    Keycloak.flow = initOptions.flow;
+                }
             }
-        }
 
-        if (!Keycloak.responseMode) {
-            Keycloak.responseMode = 'fragment';
-        }
-        if (!Keycloak.responseType) {
-            Keycloak.responseType = 'code';
-            Keycloak.flow = 'standard';
-        }
-
-        // loading keycloak conf
-
-        this.loadConfig(Keycloak.config).subscribe(loaded => {
-            if (loaded) {
-                this.processInit(initOptions).subscribe(initialized => {
-                    Keycloak.initializedBehaviourSubject.next(true);
-                });
+            if (!Keycloak.responseMode) {
+                Keycloak.responseMode = 'fragment';
             }
-        });
+            if (!Keycloak.responseType) {
+                Keycloak.responseType = 'code';
+                Keycloak.flow = 'standard';
+            }
+
+            // loading keycloak conf
+
+            this.loadConfig(Keycloak.config).subscribe(loaded => {
+                if (loaded) {
+                    this.processInit(initOptions).subscribe(initialized => {
+                        Keycloak.initializedBehaviourSubject.next(true);
+                    });
+                }
+            });
+        }
     }
 
     private loadConfig(url:string):Observable<boolean> {
@@ -636,6 +639,8 @@ export class Keycloak {
 
                     switch (initOptions.onLoad) {
                         case 'check-sso':
+
+                            console.info('login iframe ? '+Keycloak.loginIframe.enable);
                             if (Keycloak.loginIframe.enable) {
                                 this.setupCheckLoginIframe().subscribe(setup => {
                                     Keycloak.checkLoginIframe().subscribe(checked => {
@@ -667,6 +672,7 @@ export class Keycloak {
             if (!Keycloak.loginIframe.enable) {
                 console.info('setting up login iframe ended 1');
                 observer.next(true);
+                return;
             }
 
             if (Keycloak.loginIframe.iframe) {
@@ -681,7 +687,7 @@ export class Keycloak {
                 Keycloak.checkLoginIframe().subscribe(check => {
                     console.info('iframe checked');
                 });
-                if (Keycloak.token) {
+                if (Keycloak.accessToken) {
                     setTimeout(check, Keycloak.loginIframe.interval * 1000);
                 }
             };

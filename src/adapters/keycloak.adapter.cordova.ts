@@ -1,7 +1,27 @@
+/*
+ * Copyright 2017 ebondu and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { Keycloak } from '../services/keycloak.core.service';
 
 declare var window: any;
 
+/**
+ * Cordova adapter for hybrid apps.
+ */
 export class CordovaAdapter {
 
     public login(options: any) {
@@ -50,7 +70,7 @@ export class CordovaAdapter {
 
     public logout(options: any) {
         let logoutUrl = Keycloak.createLogoutUrl(options);
-        let ref = window.open(logoutUrl, '_blank', 'location=no,hidden=yes');
+        let ref = window.cordova.InAppBrowser.open(logoutUrl, '_blank', 'location=no,hidden=yes');
         let error: any;
 
         ref.addEventListener('loadstart', function (event: any) {
@@ -80,7 +100,7 @@ export class CordovaAdapter {
 
     public register() {
         let registerUrl = Keycloak.createRegisterUrl({});
-        let ref = window.open(registerUrl, '_blank', 'location=no');
+        let ref = window.cordova.InAppBrowser.open(registerUrl, '_blank', 'location=no');
         ref.addEventListener('loadstart', function (event: any) {
             if (event.url.indexOf('http://localhost') === 0) {
                 ref.close();
@@ -90,7 +110,7 @@ export class CordovaAdapter {
 
     public accountManagement() {
         let accountUrl = Keycloak.createAccountUrl({});
-        let ref = window.open(accountUrl, '_blank', 'location=no');
+        let ref = window.cordova.InAppBrowser.open(accountUrl, '_blank', 'location=no');
         ref.addEventListener('loadstart', function (event: any) {
             if (event.url.indexOf('http://localhost') === 0) {
                 ref.close();
