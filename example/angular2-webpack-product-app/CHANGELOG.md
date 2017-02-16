@@ -1,33 +1,14 @@
 # Changelog
 
-# 04 October 2016
+# v0.4.0
 
-- Migrate to webpack 2
+- Extending angular Http to ease remote calls 
 
-# 18 September 2016
+# v0.3.0
 
-- Using `awesome-typescript-loader` instead of `ts-loader`.
+- Code cleaning
+- Adding an example app
 
-# 5 September 2016
+# v0.2.0
 
-- Migration to TS2 and @types
-
-## 1 September 2016
-
-- Using RC6.
-
-## 28 August 2016
-
-- Adding webpack-dashboard.
-
-## 23 August 2016
-
-- Adding HMR support.
-
-## 3 July 2016
-
-- Use html5mode instead of hash navigation.
-
-## 24 June 2016
-
-- Be able to import Component's templates and styles without using require.
+- First migration from keycloak-js 

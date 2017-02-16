@@ -158,7 +158,7 @@ export class Keycloak {
         let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.accessToken});
 
         let options:RequestOptionsArgs = {headers: headers};
-        return this.http.get(url, options).map(profile => profile.json());
+        return Keycloak.http.get(url, options).map(profile => profile.json());
     }
 
     static loadUserInfo():Observable<any> {
@@ -166,7 +166,7 @@ export class Keycloak {
         let headers = new Headers({'Accept': 'application/json', 'Authorization': 'bearer ' + Keycloak.accessToken});
 
         let options:RequestOptionsArgs = {headers: headers};
-        return this.http.get(url, options).map(profile => profile);
+        return Keycloak.http.get(url, options).map(profile => profile);
     }
 
     static hasRealmRole(role:string):boolean {
@@ -460,9 +460,8 @@ export class Keycloak {
     }
 
     // public constructor
-    constructor(private http:Http) {
+    constructor() {
         Keycloak.loginIframe = new LoginIframe(true, [], 5);
-        Keycloak.http = http;
     }
 
     public init(initOptions:any) {
@@ -561,7 +560,7 @@ export class Keycloak {
 
             if (configUrl) {
 
-                this.http.get(configUrl).map(res => res.json()).subscribe(config => {
+                Keycloak.http.get(configUrl).map(res => res.json()).subscribe(config => {
 
                     Keycloak.authServerUrl = config['auth-server-url'];
                     Keycloak.realm = config['realm'];

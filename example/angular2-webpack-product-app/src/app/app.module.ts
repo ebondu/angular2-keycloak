@@ -1,5 +1,5 @@
 import { NgModule, ApplicationRef } from '@angular/core';
-import {APP_BASE_HREF} from '@angular/common';
+import { APP_BASE_HREF } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpModule } from '@angular/http';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +28,7 @@ import { removeNgStyles, createNewHosts } from '@angularclass/hmr';
   ],
   providers: [
     ApiService,
-    {provide: APP_BASE_HREF, useValue: '/angular2-product'}
+    { provide: APP_BASE_HREF, useValue: '/angular2-product' }
   ],
   bootstrap: [AppComponent]
 })

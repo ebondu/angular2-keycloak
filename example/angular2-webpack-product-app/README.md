@@ -4,7 +4,7 @@ A simple angular2 / webpack2 + Keycloak Typescript lib example app inspired on t
 
 App generated with [`angular2-webpack`](https://github.com/preboot/angular2-webpack/) 
 
-### Quick start with Keycloak demo distribution
+### Quick start with Keycloak demo distribution (recommended)
 
 This app will <b>replace</b> the original angular2-product app to re-use the pre-configured demo realm.
 
@@ -37,7 +37,7 @@ $ mvn wildfly:deploy
 
 If you already have a configured Keycloak server (and not running locally on `8080` port) you can just :
 
-* Edit `keycloak.json` from [`angular2-webpack-product-app/src/public/keycloak.json`](angular2-webpack-product-app/src/public/keycloak.json) according to your existing Keycloak configuration. 
+* Edit `keycloak.json` from [`angular2-webpack-product-app/src/public/keycloak.json`](angular2-webpack-product-app/src/public/angular2-product/keycloak.json) and [`angular2-webpack-product-app/src/public/angular2-product/keycloak.json`](angular2-webpack-product-app/src/public/angular2-product/keycloak.json) according to your existing Keycloak configuration. 
 
 Then install and start the app :
 
@@ -55,11 +55,12 @@ $ npm start
 
 Go to [`angular2-product`](http://localhost:8080/angular2-product/) in your browser.
 
-
 ## Usage 
 
 * click on [`login`](login) will prompt the Keycloak login form.
 * click on [`My profile`](myprofile) will load and display the user profile.
+
+* click on [`Load product`](Load product) to load products from the demo service (to adapt when testing without demo distribution)
 
 # License
 

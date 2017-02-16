@@ -21,24 +21,25 @@ import {
     RequestMethod,
     Response,
     RequestOptionsArgs,
+    RequestOptions,
     Headers,
-    Request
+    Request,
+    ConnectionBackend
 } from '@angular/http';
 
 import { Observable, BehaviorSubject } from 'rxjs/Rx';
 import 'rxjs/operator/map';
 import 'rxjs/operator/filter';
 import 'rxjs/operator/catch';
-import { KeycloakAuthorization } from './keycloak.auth.service';
-import { Keycloak } from './keycloak.core.service';
+import { KeycloakAuthorization } from '../services/keycloak.auth.service';
+import { Keycloak } from '../services/keycloak.core.service';
 
 /**
  * An Angular http proxy supporting Keycloak auth & authz.
  * Authenticate user, manage tokens and add authorization header to access to remote Keycloak protected resources.
  */
-
 @Injectable()
-export class KeycloakHttp {
+export class KeycloakHttp extends Http {
 
     // Observable on service status.
     // If true, keycloakHttp is ready to handle requests
@@ -47,54 +48,58 @@ export class KeycloakHttp {
 
     private MAX_UNAUTHORIZED_ATTEMPTS: number = 2;
 
-    // constructor
-    constructor(private http: Http, private keycloakAuth: KeycloakAuthorization, private keycloak: Keycloak) {
+    constructor(backend: ConnectionBackend,
+                defaultOptions: RequestOptions,
+                private keycloak: Keycloak,
+                private keycloakAuth: KeycloakAuthorization) {
+
+        super(backend, defaultOptions);
+        Keycloak.http = new Http(backend, defaultOptions);
         this.keycloak.init({});
         this.keycloakAuth.init();
     }
-
 
     get(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         // console.info("GET");
         options = options || {};
         options.method = RequestMethod.Get;
-        return this.request(url, 1, options);
+        return this.configureRequest(url, 1, options);
     }
 
     post(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Post;
         options.body = body;
-        return this.request(url, 1, options);
+        return this.configureRequest(url, 1, options);
     }
 
     put(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Put;
         options.body = body;
-        return this.request(url, 1, options);
+        return this.configureRequest(url, 1, options);
     }
 
     delete(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Delete;
-        return this.request(url, 1, options);
+        return this.configureRequest(url, 1, options);
     }
 
     patch(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Patch;
         options.body = body;
-        return this.request(url, 1, options);
+        return this.configureRequest(url, 1, options);
     }
 
     head(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         options = options || {};
         options.method = RequestMethod.Head;
-        return this.request(url, 1, options);
+        return this.configureRequest(url, 1, options);
     }
 
-    private request(url: string | Request, count: number, options?: RequestOptionsArgs): Observable<Response> {
+    private configureRequest(url:string | Request, count: number, options?: RequestOptionsArgs): Observable<Response> {
 
         if (!KeycloakHttp.readyBehaviourSubject.getValue()) {
             KeycloakAuthorization.initializedObs.take(1).filter(init => init === true).subscribe(() => {
@@ -115,7 +120,7 @@ export class KeycloakHttp {
 
             return KeycloakHttp.readyObs.take(2).filter(ready => ready === true).flatMap(ready => {
                 console.info('KC_HTTP: keycloak is now http ready, re-attempting request...');
-                return this.request(url, count, options);
+                return this.configureRequest(url, count, options);
             });
         } else {
 
@@ -125,7 +130,7 @@ export class KeycloakHttp {
 
                 console.info('KC_HTTP: using headers ' + options);
                 // calling http with headers
-                return this.http.request(url, options).catch(error => {
+                return super.request(url, options).catch(error => {
 
                     // error handling
                     let status = error.status;
@@ -133,11 +138,11 @@ export class KeycloakHttp {
                         console.info('KC_HTTP: request is unauthorized!');
                         if (error.url.indexOf('/authorize') === -1) {
                             // auth error handling, observing for authorization
-                            return new Observable((observer: any) => {
+                            return new Observable((observer:any) => {
 
                                 if (error.headers.get('WWW-Authenticate') !== null) {
                                     // requesting authorization to KC server
-                                    this.keycloakAuth.authorize(error.headers.get('WWW-Authenticate')).subscribe(token => {
+                                    KeycloakAuthorization.authorize(error.headers.get('WWW-Authenticate')).subscribe(token => {
                                         // notifying observers for authz result token
                                         observer.next(token);
                                     });
@@ -155,7 +160,7 @@ export class KeycloakHttp {
                 if (res instanceof Response) {
 
                     // Http response
-                    return new Observable<Response>((observer: any) =>
+                    return new Observable<Response>((observer:any) =>
                         observer.next(res)
                     );
                 } else {
@@ -165,7 +170,7 @@ export class KeycloakHttp {
                     count = count + 1;
                     // retrying request with new token
                     console.info('KC_HTTP: retrying request with new authorization token');
-                    return this.request(url, count, options);
+                    return this.configureRequest(url, count, options);
                 }
             });
         }

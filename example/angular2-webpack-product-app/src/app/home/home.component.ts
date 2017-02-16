@@ -1,6 +1,6 @@
-import { Response } from '@angular/http';
+import { Response, Http } from '@angular/http';
 import { Component, OnInit } from '@angular/core';
-import { Keycloak, KeycloakHttp } from '@ebondu/angular2-keycloak';
+import { Keycloak } from '@ebondu/angular2-keycloak';
 import 'rxjs/operator/map';
 import 'rxjs/operator/filter';
 import 'rxjs/operator/catch';
@@ -16,20 +16,23 @@ export class HomeComponent implements OnInit {
   private isAuthenticated: boolean;
 
   products: string[] = [];
-  private profile:any;
-  constructor(private keycloak: Keycloak, private http: KeycloakHttp) {
+  private profile: any;
+  constructor(private keycloak: Keycloak, private http: Http) {
 
     Keycloak.authenticatedObs.subscribe(auth => {
       this.isAuthenticated = auth;
       this.parsedToken = Keycloak.tokenParsed;
 
-      console.info("APP: authentication status changed...");
+      console.info('APP: authentication status changed...');
     });
   }
 
   ngOnInit() {
-    console.info("APP : initializing home component...");
-    Keycloak.config = "angular2-product/keycloak.json";
+    console.info('APP : initializing home component...');
+
+    // comment or change regarding your app-name
+    Keycloak.config = 'angular2-product/keycloak.json';
+
     this.keycloak.init({
       checkLoginIframe: false
     });
@@ -50,8 +53,10 @@ export class HomeComponent implements OnInit {
   }
 
   reloadData() {
+
+    // change regarding your backend address
     this.http.get('/database/products')
-      .map((res:Response) => res.json())
+      .map((res: Response) => res.json())
       .subscribe(prods => this.products = prods,
         error => console.log(error));
   }

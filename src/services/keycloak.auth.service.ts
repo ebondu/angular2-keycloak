@@ -34,32 +34,7 @@ export class KeycloakAuthorization {
     static initializedBehaviourSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
     static initializedObs: Observable<boolean> = KeycloakAuthorization.initializedBehaviourSubject.asObservable();
 
-    private rpt: string;
-
-    // constructor
-    constructor(private http: Http, private keycloak: Keycloak) {
-
-    }
-
-    public init() {
-       if (!KeycloakAuthorization.initializedBehaviourSubject.getValue()) {
-            Keycloak.initializedObs.filter((status: any) => status === true).take(1).subscribe(status => {
-
-                console.info('KC_AUTHZ: Keycloak initialized, loading authz...');
-                let url = Keycloak.authServerUrl + '/realms/' + Keycloak.realm + '/.well-known/uma-configuration';
-                let headers = new Headers({'Accept': 'application/json'});
-                let options: RequestOptionsArgs = {headers: headers};
-
-                this.http.get(url, options).subscribe(authz => {
-                    KeycloakAuthorization.config = authz.json();
-
-                    // notifying initialization
-                    KeycloakAuthorization.initializedBehaviourSubject.next(true);
-                });
-            });
-        }
-        this.keycloak.init({});
-    };
+    static rpt: string;
 
     /**
      * This method enables client applications to better integrate with resource servers protected by a Keycloak
@@ -69,7 +44,7 @@ export class KeycloakAuthorization {
      * necessary information to ask a Keycloak server for authorization data using both UMA and Entitlement protocol,
      * depending on how the policy enforcer at the resource server was configured.
      */
-    public authorize(wwwAuthenticateHeader: string): Observable<any> {
+    static authorize(wwwAuthenticateHeader: string): Observable<any> {
         if (wwwAuthenticateHeader.indexOf('UMA') !== -1) {
             let params = wwwAuthenticateHeader.split(',');
             let headers: any;
@@ -94,7 +69,7 @@ export class KeycloakAuthorization {
 
             let options: RequestOptionsArgs = {headers: headers};
 
-            return this.http.post(KeycloakAuthorization.config.rpt_endpoint, body, options).map(token => {
+            return Keycloak.http.post(KeycloakAuthorization.config.rpt_endpoint, body, options).map(token => {
 
                 let status = token.status;
 
@@ -131,7 +106,7 @@ export class KeycloakAuthorization {
     /**
      * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
      */
-    public entitlement(resourceSeververId: string): Observable<any> {
+    static entitlement(resourceSeververId: string): Observable<any> {
 
         return new Observable<any>((observer: any) => {
 
@@ -139,7 +114,7 @@ export class KeycloakAuthorization {
             let headers = new Headers({'Authorization': 'Bearer ' + Keycloak.accessToken});
             let options: RequestOptionsArgs = {headers: headers};
 
-            this.http.get(url, options).map(token => {
+            Keycloak.http.get(url, options).map(token => {
                 let status = token.status;
 
                 if (status >= 200 && status < 300) {
@@ -156,5 +131,30 @@ export class KeycloakAuthorization {
                 }
             });
         });
+    };
+
+    // constructor
+    constructor(private keycloak: Keycloak) {
+
+    }
+
+    public init() {
+        if (!KeycloakAuthorization.initializedBehaviourSubject.getValue()) {
+            Keycloak.initializedObs.filter((status: any) => status === true).take(1).subscribe(status => {
+
+                console.info('KC_AUTHZ: Keycloak initialized, loading authz...');
+                let url = Keycloak.authServerUrl + '/realms/' + Keycloak.realm + '/.well-known/uma-configuration';
+                let headers = new Headers({'Accept': 'application/json'});
+                let options: RequestOptionsArgs = {headers: headers};
+
+                Keycloak.http.get(url, options).subscribe(authz => {
+                    KeycloakAuthorization.config = authz.json();
+
+                    // notifying initialization
+                    KeycloakAuthorization.initializedBehaviourSubject.next(true);
+                });
+            });
+        }
+        this.keycloak.init({});
     };
 }
