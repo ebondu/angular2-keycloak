@@ -1,12 +1,9 @@
 import { NgModule } from '@angular/core';
-import { HttpModule, ConnectionBackend } from '@angular/http';
+import { HttpModule, Http, XHRBackend, RequestOptions } from '@angular/http';
 
 import { Keycloak } from './services/keycloak.core.service';
 import { KeycloakAuthorization } from './services/keycloak.auth.service';
 import { KeycloakHttp } from './services/keycloak.http.service';
-
-import { Http, XHRBackend,RequestOptions } from '@angular/http';
-
 
 @NgModule({
     imports: [ HttpModule ],
