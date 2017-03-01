@@ -55,33 +55,61 @@ To login
 import { Keycloak } from '@ebondu/angular2-keycloak';
 ...
 
-export class MyLoginClass {
+export class MyLoginClass implements OnInit {
+
+  public parsedToken: any;
+  public isAuthenticated: boolean;
+  public profile: any;
 
   constructor( private keycloak: Keycloak) {
+    Keycloak.authenticatedObs.subscribe(auth => {
+      this.isAuthenticated = auth;
+      this.parsedToken = Keycloak.tokenParsed;
+
+      console.info('APP: authentication status changed...');
+    });
     this.keycloak.init({});
   }
-  
-  
-  login(): void {
-     Keycloak.login(true);
+
+  ngOnInit() {
+    // Configure the Keycloak
+    Keycloak.config = 'assets/keycloak.json';
+
+    // Initialise the Keycloak
+    this.keycloak.init({
+      checkLoginIframe: false
+    });
   }
-  
+
+  login() {
+    Keycloak.login({});
+  }
+
+  logout() {
+    Keycloak.logout({});
+  }
+
+  loadProfile() {
+    Keycloak.loadUserProfile().subscribe(profile => {
+      this.profile = profile;
+    });
+  }
+
   ...
 }
 ```
 
-To use keycloak http proxy (authentication / authorization)
+Please, use Http interface to get access to Keycloak http proxy (authentication / authorization). 
+Angular will inject the right provider class for you.
 
 ```javascript
-import { KeycloakHttp } from '@ebondu/angular2-keycloak';
+import { Http } from '@angular/http';
 ...
 
 @Injectable()
 export class MyClass {
-
-    constructor(private http: KeycloakHttp) {
-
-    }
+    // Angualar will inject the instance of the KeycloakHttp class
+    constructor(private http: Http) {}
 
     callAPI(): Observable<MyObject> {
 

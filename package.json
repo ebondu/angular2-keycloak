@@ -1,14 +1,12 @@
 {
   "name": "@ebondu/angular2-keycloak",
   "private": false,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "scripts": {
     "lint": "tslint src/**/*.ts",
     "test": "tsc && karma start",
-    "postinstall": "typings install",
     "prepublish": "tsc",
-    "tsc": "tsc",
-    "typings": "typings"
+    "tsc": "tsc"
   },
   "repository": {
     "type": "git",
@@ -30,21 +28,17 @@
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "dependencies": {
+    "@angular/core": "^2.3.0",
+    "@angular/http": "^2.3.0",
+    "@angular/platform-browser": "^2.3.0"
   },
   "devDependencies": {
-    "@angular/core": "2.2.1",
-    "@angular/common": "2.2.1",
-    "@angular/compiler": "2.2.1",
-    "@angular/http": "2.2.1",
-    "@angular/platform-browser": "2.2.1",
-    "codelyzer": "2.0.0-beta.4",
-    "rxjs": "5.0.0-beta.12",
-    "tslint": "4.4.1",
-    "typescript": "^2.0.9",
-    "typings": "^1.0.4",
-    "zone.js": "0.6.26"
+    "rxjs": "^5.1.0",
+    "tslint": "^4.4.1",
+    "typescript": "^2.0.2",
+    "zone.js": "^0.7.2"
   },
   "engines": {
-    "node": ">=0.8.0"
+    "node": ">= 5.4.1 < 7"
   }
 }
