@@ -61,47 +61,47 @@ export class KeycloakHttp extends Http {
 
     get(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         // console.info("GET");
-        options = options || {};
+        options = options || {withCredentials: true};
         options.method = RequestMethod.Get;
         return this.configureRequest(url, 1, options);
     }
 
     post(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {};
+        options = options || {withCredentials: true};
         options.method = RequestMethod.Post;
         options.body = body;
         return this.configureRequest(url, 1, options);
     }
 
     put(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {};
+        options = options || {withCredentials: true};
         options.method = RequestMethod.Put;
         options.body = body;
         return this.configureRequest(url, 1, options);
     }
 
     delete(url: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {};
+        options = options || {withCredentials: true};
         options.method = RequestMethod.Delete;
         return this.configureRequest(url, 1, options);
     }
 
     patch(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {};
+        options = options || {withCredentials: true};
         options.method = RequestMethod.Patch;
         options.body = body;
         return this.configureRequest(url, 1, options);
     }
 
     head(url: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {};
+        options = options || {withCredentials: true};
         options.method = RequestMethod.Head;
         return this.configureRequest(url, 1, options);
     }
 
     private configureRequest(url:string | Request, count: number, options?: RequestOptionsArgs): Observable<Response> {
 
-        if (!KeycloakHttp.readyBehaviourSubject.getValue()) {
+        if (options.withCredentials && !KeycloakHttp.readyBehaviourSubject.getValue()) {
             KeycloakAuthorization.initializedObs.take(1).filter(init => init === true).subscribe(() => {
                 console.info('KC_HTTP: keycloak authz initialized...');
             });
@@ -180,25 +180,29 @@ export class KeycloakHttp extends Http {
     private setHeaders(options: RequestOptionsArgs): Observable<RequestOptionsArgs> {
         return new Observable<RequestOptionsArgs>((observer: any) => {
 
-            console.info('adding headers with options ' + options);
-            let token = Keycloak.accessToken;
-            if (Keycloak.refreshToken) {
-                console.info('checking token');
-                Keycloak.updateToken(5).subscribe(res => {
-                    token = res;
+            if (options.withCredentials) {
+                console.info('adding headers with options ' + options);
+                let token = Keycloak.accessToken;
+                if (Keycloak.refreshToken) {
+                    console.info('checking token');
+                    Keycloak.updateToken(5).subscribe(res => {
+                        token = res;
+                        if (!options.headers) {
+                            options.headers = new Headers();
+                        }
+                        console.info('returning an updated token');
+                        options.headers.set('Authorization', 'Bearer ' + token);
+                        observer.next(options);
+                    });
+                } else {
                     if (!options.headers) {
                         options.headers = new Headers();
                     }
-                    console.info('returning an updated token');
+                    console.info('returning the existing token ');
                     options.headers.set('Authorization', 'Bearer ' + token);
                     observer.next(options);
-                });
-            } else {
-                if (!options.headers) {
-                    options.headers = new Headers();
                 }
-                console.info('returning the existing token ');
-                options.headers.set('Authorization', 'Bearer ' + token);
+            } else {
                 observer.next(options);
             }
         });
