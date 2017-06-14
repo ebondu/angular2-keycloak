@@ -24,6 +24,15 @@ declare var window: any;
  */
 export class CordovaAdapter {
 
+    static openBrowserTab(url: String, options: any) {
+        let cordova = window.cordova;
+        if (options.toolbarColor) {
+            cordova.plugins.browsertab.themeable.openUrl(url, options);
+        } else {
+            cordova.plugins.browsertab.themeable.openUrl(url);
+        };
+    }
+
     public login(options: any) {
         //let promise = Keycloak.createPromise();
         let o = 'location=no';
@@ -37,88 +46,137 @@ export class CordovaAdapter {
             throw new Error('Cannot authenticate via a web browser');
         }
 
-        if (!window.cordova.InAppBrowser) {
-            throw new Error('The Apache Cordova InAppBrowser plugin was not found and is required');
+        if (!window.cordova.InAppBrowser || !window.cordova.plugins.browsertab) {
+            throw new Error('The Apache Cordova InAppBrowser/BrowserTab plugins was not found and are required');
         }
 
-        let ref = window.cordova.InAppBrowser.open(loginUrl, '_blank', o);
+        let ref: any;
+        //let ref = window.cordova.InAppBrowser.open(loginUrl, '_blank', o);
+        //let ref = window.cordova.InAppBrowser.open(loginUrl, '_system', o);
         let completed = false;
 
-        ref.addEventListener('loadstart', function (event: any) {
-            if (event.url.indexOf('http://localhost') === 0) {
-                let callback = Keycloak.parseCallback(event.url);
-                Keycloak.processCallback(callback);
-                ref.close();
-                completed = true;
-            }
-        });
+        window.cordova.plugins.browsertab.themeable.isAvailable(
+            function (result: any) {
+                if (!result) {
+                    ref = window.cordova.InAppBrowser.open(loginUrl, '_system');
+                    ref.addEventListener('loadstart', function (event: any) {
+                        if (event.url.indexOf('http://localhost') === 0) {
+                            let callback = Keycloak.parseCallback(event.url);
+                            Keycloak.processCallback(callback);
+                            ref.close();
+                            completed = true;
+                        }
+                    });
 
-        ref.addEventListener('loaderror', function (event: any) {
-            if (!completed) {
-                if (event.url.indexOf('http://localhost') === 0) {
+                    ref.addEventListener('loaderror', function (event: any) {
+                        if (!completed) {
+                            if (event.url.indexOf('http://localhost') === 0) {
 
-                    let callback = Keycloak.parseCallback(event.url);
-                    Keycloak.processCallback(callback);
-                    ref.close();
-                    completed = true;
+                                let callback = Keycloak.parseCallback(event.url);
+                                Keycloak.processCallback(callback);
+                                ref.close();
+                                completed = true;
+                            } else {
+                                ref.close();
+                            }
+                        }
+                    });
                 } else {
-                    ref.close();
+                    CordovaAdapter.openBrowserTab(loginUrl, options);
                 }
+            },
+            function (isAvailableError: any) {
+                console.info('failed to query availability of in-app browser tab');
             }
-        });
+        );
+    }
+
+    public closeBrowserTab() {
+        let cordova = window.cordova;
+        cordova.plugins.browsertab.themeable.close();
+        //completed = true;
     }
 
     public logout(options: any) {
+        let cordova = window.cordova;
         let logoutUrl = Keycloak.createLogoutUrl(options);
-        let ref = window.cordova.InAppBrowser.open(logoutUrl, '_blank', 'location=no,hidden=yes');
+        let ref: any;
         let error: any;
 
-        ref.addEventListener('loadstart', function (event: any) {
-            if (event.url.indexOf('http://localhost') === 0) {
-                ref.close();
-            }
-        });
+        cordova.plugins.browsertab.themeable.isAvailable(
+            function (result: any) {
+                if (!result) {
+                    ref = cordova.InAppBrowser.open(logoutUrl, '_system');
+                    ref.addEventListener('loadstart', function (event: any) {
+                        if (event.url.indexOf('http://localhost') === 0) {
+                            this.ref.close();
+                        }
+                    });
 
-        ref.addEventListener('loaderror', function (event: any) {
-            if (event.url.indexOf('http://localhost') === 0) {
-                ref.close();
-            } else {
-                error = true;
-                ref.close();
-            }
-        });
+                    ref.addEventListener('loaderror', function (event: any) {
+                        if (event.url.indexOf('http://localhost') === 0) {
+                            this.ref.close();
+                        } else {
+                            error = true;
+                            this.ref.close();
+                        }
+                    });
 
-        ref.addEventListener('exit', function (event: any) {
-            if (error) {
-                //promise.setError();
-            } else {
-                Keycloak.clearToken({});
-                //promise.setSuccess();
+                    ref.addEventListener('exit', function (event: any) {
+                        if (error) {
+                            //promise.setError();
+                        } else {
+                            Keycloak.clearToken({});
+                            //promise.setSuccess();
+                        }
+                    });
+                } else {
+                    CordovaAdapter.openBrowserTab(logoutUrl, options);
+                }
+            },
+            function (isAvailableError: any) {
+                console.info('failed to query availability of in-app browser tab');
             }
-        });
+        );
     }
 
-    public register() {
+    public register(options: any) {
         let registerUrl = Keycloak.createRegisterUrl({});
-        let ref = window.cordova.InAppBrowser.open(registerUrl, '_blank', 'location=no');
-        ref.addEventListener('loadstart', function (event: any) {
-            if (event.url.indexOf('http://localhost') === 0) {
-                ref.close();
+        window.cordova.plugins.browsertab.themeable.isAvailable(
+            function (result: any) {
+                if (!result) {
+                    window.cordova.InAppBrowser.open(registerUrl, '_system');
+                } else {
+                    CordovaAdapter.openBrowserTab(registerUrl, options);
+                }
+            },
+            function (isAvailableError: any) {
+                console.info('failed to query availability of in-app browser tab');
             }
-        });
+        );
     }
 
-    public accountManagement() {
+    public accountManagement(options: any) {
         let accountUrl = Keycloak.createAccountUrl({});
-        let ref = window.cordova.InAppBrowser.open(accountUrl, '_blank', 'location=no');
-        ref.addEventListener('loadstart', function (event: any) {
-            if (event.url.indexOf('http://localhost') === 0) {
-                ref.close();
+        window.cordova.plugins.browsertab.themeable.isAvailable(
+            function (result: any) {
+                if (!result) {
+                    window.cordova.InAppBrowser.open(accountUrl, '_system');
+                } else {
+                    CordovaAdapter.openBrowserTab(accountUrl, options);
+                }
+            },
+            function (isAvailableError: any) {
+                console.info('failed to query availability of in-app browser tab');
             }
-        });
+        );
     }
 
     public redirectUri(options: any): any {
-        return 'http://localhost';
+        if (options.redirectUri) {
+            return options.redirectUri;
+        } else {
+            return 'http://localhost';
+        }
     }
 }

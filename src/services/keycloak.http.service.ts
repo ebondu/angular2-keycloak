@@ -61,40 +61,40 @@ export class KeycloakHttp extends Http {
 
     get(url: string, options ?: RequestOptionsArgs): Observable <Response> {
         // console.info("GET");
-        options = options || {withCredentials: true};
+        options = options || {withCredentials: false};
         options.method = RequestMethod.Get;
         return this.configureRequest(url, 1, options);
     }
 
     post(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {withCredentials: true};
+        options = options || {withCredentials: false};
         options.method = RequestMethod.Post;
         options.body = body;
         return this.configureRequest(url, 1, options);
     }
 
     put(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {withCredentials: true};
+        options = options || {withCredentials: false};
         options.method = RequestMethod.Put;
         options.body = body;
         return this.configureRequest(url, 1, options);
     }
 
     delete(url: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {withCredentials: true};
+        options = options || {withCredentials: false};
         options.method = RequestMethod.Delete;
         return this.configureRequest(url, 1, options);
     }
 
     patch(url: string, body: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {withCredentials: true};
+        options = options || {withCredentials: false};
         options.method = RequestMethod.Patch;
         options.body = body;
         return this.configureRequest(url, 1, options);
     }
 
     head(url: string, options ?: RequestOptionsArgs): Observable <Response> {
-        options = options || {withCredentials: true};
+        options = options || {withCredentials: false};
         options.method = RequestMethod.Head;
         return this.configureRequest(url, 1, options);
     }

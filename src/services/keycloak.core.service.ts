@@ -725,7 +725,7 @@ export class Keycloak {
                     console.info('setting up login iframe ended 7');
                 }
 
-                if (event.data !== 'unchanged') {
+                if (event.origin === iframe.iframeOrigin && event.data !== 'unchanged') {
                     console.info('setting up login iframe ended 6');
                     Keycloak.clearToken({});
                 }
