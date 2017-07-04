@@ -1,6 +1,6 @@
 import { Response, Http } from '@angular/http';
 import { Component, OnInit } from '@angular/core';
-import { Keycloak } from '@ebondu/angular2-keycloak';
+import { Keycloak, KeycloakAuthorization } from '@ebondu/angular2-keycloak';
 import 'rxjs/operator/map';
 import 'rxjs/operator/filter';
 import 'rxjs/operator/catch';
@@ -17,7 +17,7 @@ export class HomeComponent implements OnInit {
 
   products: string[] = [];
   private profile: any;
-  constructor(private keycloak: Keycloak, private http: Http) {
+  constructor(private keycloak: Keycloak, private keycloakAuthz: KeycloakAuthorization, private http: Http) {
 
     Keycloak.authenticatedObs.subscribe(auth => {
       this.isAuthenticated = auth;
@@ -29,6 +29,8 @@ export class HomeComponent implements OnInit {
 
   ngOnInit() {
     console.info('APP : initializing home component...');
+
+    this.keycloakAuthz.init();
 
     // comment or change regarding your app-name
     Keycloak.config = 'angular2-product/keycloak.json';

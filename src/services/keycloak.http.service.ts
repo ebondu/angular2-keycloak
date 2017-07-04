@@ -55,8 +55,8 @@ export class KeycloakHttp extends Http {
 
         super(backend, defaultOptions);
         Keycloak.http = new Http(backend, defaultOptions);
-        this.keycloak.init({});
-        this.keycloakAuth.init();
+        //this.keycloak.init({});
+        //this.keycloakAuth.init();
     }
 
     get(url: string, options ?: RequestOptionsArgs): Observable <Response> {

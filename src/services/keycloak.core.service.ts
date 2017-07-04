@@ -27,7 +27,7 @@ import { URIParser } from '../utils/keycloak.utils.URIParser';
 import { LoginIframe } from '../utils/keycloak.utils.loginIframe';
 import { UUID } from '../utils/keycloak.utils.UUID';
 import { Token } from '../utils/keycloak.utils.token';
-
+import { Lock } from '../utils/keycloak.utils.singleton';
 
 /**
  * Keycloak core classes to manage tokens with a keycloak server.
@@ -39,9 +39,12 @@ import { Token } from '../utils/keycloak.utils.token';
 
 declare var window: any;
 
+
 @Injectable()
 export class Keycloak {
 
+    static lock: Lock = Lock.getInstance();
+    
     // internal objects
     static config:any;
     static adapter:any;
@@ -52,6 +55,7 @@ export class Keycloak {
     static timeSkew:number;
     static http:Http;
     static loginRequired:boolean;
+
 
     // Token objects
     static tokenParsed:any;
@@ -77,6 +81,7 @@ export class Keycloak {
 
     // Keycloak state subjects
     static initializedBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
+    static initializingBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
     static authenticatedBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
     static authSuccessBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
     static authErrorBehaviourSubject:BehaviorSubject<any> = new BehaviorSubject({});
@@ -84,6 +89,7 @@ export class Keycloak {
 
     // Keycloak state observables
     static initializedObs:Observable<boolean> = Keycloak.initializedBehaviourSubject.asObservable();
+    static initializingObs:Observable<boolean> = Keycloak.initializingBehaviourSubject.asObservable();
     static authenticatedObs:Observable<boolean> = Keycloak.authenticatedBehaviourSubject.asObservable();
     static authSuccessObs:Observable<boolean> = Keycloak.authSuccessBehaviourSubject.asObservable();
     static authErrorObs:Observable<boolean> = Keycloak.authErrorBehaviourSubject.asObservable();
@@ -149,8 +155,8 @@ export class Keycloak {
         return Keycloak.adapter.register(options);
     }
 
-    static accountManagement() {
-        return Keycloak.adapter.accountManagement();
+    static accountManagement(options:any) {
+        return Keycloak.adapter.accountManagement(options);
     }
 
     static loadUserProfile():Observable<any> {
@@ -311,13 +317,14 @@ export class Keycloak {
             if (Keycloak.loginIframe.iframe && Keycloak.loginIframe.iframeOrigin) {
 
                 let msg = Keycloak.clientId + ' ' + Keycloak.sessionId;
-                // Keycloak.loginIframe.callbackMap[Keycloak.clientId] = observer;
                 let origin = Keycloak.loginIframe.iframeOrigin;
+
+                console.info("KC_CORE: sending message to iframe "+msg+" origin :"+origin);
                 Keycloak.loginIframe.iframe.contentWindow.postMessage(msg, origin);
                 observer.next(true);
             } else {
                 // promise.setSuccess();
-                observer.next(false);
+                observer.next(true);
             }
         });
     }
@@ -397,11 +404,8 @@ export class Keycloak {
         if (accessToken) {
             Keycloak.accessToken = accessToken;
             Keycloak.tokenParsed = Token.decodeToken(accessToken);
-            let sessionId = Keycloak.realm + '/' + Keycloak.tokenParsed.sub;
-            if (Keycloak.tokenParsed.session_state) {
-                sessionId = sessionId + '/' + Keycloak.tokenParsed.session_state;
-            }
-            Keycloak.sessionId = sessionId;
+
+            Keycloak.sessionId = Keycloak.tokenParsed.session_state;
             Keycloak.authenticatedBehaviourSubject.next(true);
             Keycloak.subject = Keycloak.tokenParsed.sub;
             Keycloak.realmAccess = Keycloak.tokenParsed.realm_access;
@@ -465,9 +469,10 @@ export class Keycloak {
     }
 
     public init(initOptions:any) {
-        // should use a better lock
-
-        if (!Keycloak.initializedBehaviourSubject.getValue()) {
+        
+        console.info('KC_CORE: init called...');
+        if (!Keycloak.initializedBehaviourSubject.getValue() && !Keycloak.lock.isAquired()) {
+            Keycloak.lock.acquire();
 
             console.info('KC_CORE: initializing...');
 
@@ -541,8 +546,11 @@ export class Keycloak {
 
             this.loadConfig(Keycloak.config).subscribe(loaded => {
                 if (loaded) {
+                    Keycloak.initializedBehaviourSubject.next(true);
                     this.processInit(initOptions).subscribe(initialized => {
-                        Keycloak.initializedBehaviourSubject.next(true);
+                        console.info("KC_CORE : notifying initialized");
+
+                        //Keycloak.initializingBehaviourSubject.next(false);
                     });
                 }
             });
@@ -667,16 +675,17 @@ export class Keycloak {
 
     private setupCheckLoginIframe(): Observable<Boolean> {
         return new Observable<boolean>((observer: any) => {
-            console.info('setting up login iframe...');
+            console.info('Configuring login iframe...');
             if (!Keycloak.loginIframe.enable) {
-                console.info('setting up login iframe ended 1');
+                console.info('login iframe IS NOT enabled');
                 observer.next(true);
                 return;
             }
 
             if (Keycloak.loginIframe.iframe) {
-                console.info('setting up login iframe ended 2');
+                console.info('login iframe enabled and already created');
                 observer.next(true);
+                return;
             }
 
             let iframe:any = document.createElement('iframe');
@@ -694,19 +703,18 @@ export class Keycloak {
             iframe.onload = function () {
                 let realmUrl = Keycloak.getRealmUrl();
                 if (realmUrl.charAt(0) === '/') {
-                    let origin;
+                    let origin: any;
                     if (!window.location.origin) {
-                        origin = window.location.protocol
+                        Keycloak.loginIframe.iframeOrigin = window.location.protocol
                             + '//' + window.location.hostname
                             + (window.location.port ? ': ' + window.location.port: '');
                     } else {
-                        origin = window.location.origin;
+                        Keycloak.loginIframe.iframeOrigin = window.location.origin;
                     }
-                    Keycloak.loginIframe.iframeOrigin = origin;
                 } else {
                     Keycloak.loginIframe.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
                 }
-                console.info('setting up login iframe ended 3');
+                console.info('login iframe LOADED');
                 observer.next(true);
 
                 setTimeout(check, Keycloak.loginIframe.interval * 1000);
@@ -714,19 +722,24 @@ export class Keycloak {
 
             let src = Keycloak.getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
 
-            console.info('reloading iframe...' + src);
+            console.info('configuring iframe url to ' + src);
             iframe.setAttribute('src', src);
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
 
             let messageCallback = function (event:any) {
-                console.info('checking iframe message callback..'+event.data);
-                if (event.origin !== iframe.iframeOrigin) {
-                    console.info('setting up login iframe ended 7');
+                console.info('checking iframe message callback..'+event.data+' '+event.origin);
+                if ((event.origin !== Keycloak.loginIframe.iframeOrigin) || (Keycloak.loginIframe.iframe.contentWindow !== event.source)) {
+                    console.info('event is not coming from the iframe, ignoring it');
+                    return;
+                }
+                if (!(event.data == 'unchanged' || event.data == 'changed' || event.data == 'error')) {
+                    console.info('unknown event data, ignoring it');
+                    return;
                 }
 
-                if (event.origin === iframe.iframeOrigin && event.data !== 'unchanged') {
-                    console.info('setting up login iframe ended 6');
+                if (event.data !== 'unchanged') {
+                    console.info('event from the iframe, and data changed, clearing tokens');
                     Keycloak.clearToken({});
                 }
             };

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, OnInit } from '@angular/core';
 import { Http, Headers, RequestOptionsArgs } from '@angular/http';
 
 import { Observable, BehaviorSubject } from 'rxjs/Rx';
@@ -139,8 +139,9 @@ export class KeycloakAuthorization {
     }
 
     public init() {
+        console.info('KC_AUTHZ: Keycloak init authz...');
         if (!KeycloakAuthorization.initializedBehaviourSubject.getValue()) {
-            Keycloak.initializedObs.filter((status: any) => status === true).take(1).subscribe(status => {
+            Keycloak.initializedObs.filter((status: any) => status === true).subscribe(status => {
 
                 console.info('KC_AUTHZ: Keycloak initialized, loading authz...');
                 let url = Keycloak.authServerUrl + '/realms/' + Keycloak.realm + '/.well-known/uma-configuration';
@@ -155,6 +156,6 @@ export class KeycloakAuthorization {
                 });
             });
         }
-        this.keycloak.init({});
+        //this.keycloak.init({});
     };
 }
