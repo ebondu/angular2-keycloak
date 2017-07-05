@@ -20,7 +20,11 @@
     "email": "dev.ebondu@gmail.com"
   },
   "keywords": [
-    "angular"
+    "angular",
+    "angular2",
+    "angular4",
+    "Keycloak",
+    "typescript"
   ],
   "license": "MIT",
   "bugs": {
