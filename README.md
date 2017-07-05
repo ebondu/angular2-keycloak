@@ -37,7 +37,7 @@ import { Ng2KeycloakModule } from '@ebondu/angular2-keycloak';
     AppComponent
   ],
   imports: [
-    Ng2KeycloakModule
+    Ng2KeycloakModule.forRoot()
   ],
   providers: [
     ...
@@ -52,7 +52,7 @@ export class AppModule { }
 To login
 
 ```javascript
-import { Keycloak } from '@ebondu/angular2-keycloak';
+import { Keycloak, KeycloakAuthorization } from '@ebondu/angular2-keycloak';
 ...
 
 export class MyLoginClass implements OnInit {
@@ -61,14 +61,13 @@ export class MyLoginClass implements OnInit {
   public isAuthenticated: boolean;
   public profile: any;
 
-  constructor( private keycloak: Keycloak) {
+  constructor( private keycloak: Keycloak, private keycloakAuthz: KeycloakAuthorization) {
     Keycloak.authenticatedObs.subscribe(auth => {
       this.isAuthenticated = auth;
       this.parsedToken = Keycloak.tokenParsed;
 
       console.info('APP: authentication status changed...');
     });
-    this.keycloak.init({});
   }
 
   ngOnInit() {
@@ -76,6 +75,8 @@ export class MyLoginClass implements OnInit {
     Keycloak.config = 'assets/keycloak.json';
 
     // Initialise the Keycloak
+    this.keycloakAuthz.init();
+    
     this.keycloak.init({
       checkLoginIframe: false
     });
@@ -100,7 +101,8 @@ export class MyLoginClass implements OnInit {
 ```
 
 Please, use Http interface to get access to Keycloak http proxy (authentication / authorization). 
-Angular will inject the right provider class for you.
+Angular will inject the right provider class for you. Notes that init() methodes for Keycloak and KeycloakAuthz needs to be called first (i.e. in ngOnInit()).
+To pass the Keycloak authorization header, use the 'withCredentials' option.
 
 ```javascript
 import { Http } from '@angular/http';
@@ -114,7 +116,7 @@ export class MyClass {
     callAPI(): Observable<MyObject> {
 
       let headers = new Headers({'Accept' :'application/json'});
-      let options: RequestOptionsArgs = { headers: headers };
+      let options: RequestOptionsArgs = { headers: headers, withCredentials: true  };
         return this.http.get("http://localhost/myAPI/myMethod",  options)
             .map(res => res.json())
             .catch(err => handleError(err));
