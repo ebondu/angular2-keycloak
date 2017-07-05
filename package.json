@@ -1,5 +1,6 @@
 {
-  "name": "angular2-keycloak",
+  "name": "@ebondu/angular2-keycloak",
+  "private": false,
   "version": "0.8.0",
   "scripts": {
     "build": "gulp build",
@@ -26,7 +27,7 @@
     "Keycloak",
     "typescript"
   ],
-  "license": "MIT",
+  "license": "Apache2",
   "bugs": {
     "url": "https://github.com/ebondu/angular2-keycloak/issues"
   },

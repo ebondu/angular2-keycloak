@@ -1,5 +1,5 @@
 {
-  "name": "angular2-keycloak",
+  "name": "@ebondu/angular2-keycloak",
   "version": "0.8.0",
   "repository": {
     "type": "git",
