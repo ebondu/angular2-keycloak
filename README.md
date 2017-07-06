@@ -1,6 +1,6 @@
 # angular2-keycloak
 
-Native Typescript Keycloak library.
+Native Typescript Keycloak library for angular2/4.
 
 ## Installation
 
