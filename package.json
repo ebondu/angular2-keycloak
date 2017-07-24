@@ -1,7 +1,7 @@
 {
   "name": "@ebondu/angular2-keycloak",
   "private": false,
-  "version": "0.8.1",
+  "version": "0.8.2",
   "scripts": {
     "build": "gulp build",
     "build:watch": "gulp",
@@ -36,9 +36,9 @@
     "@angular/compiler": "^4.0.0",
     "@angular/compiler-cli": "^4.0.0",
     "@angular/core": "^4.0.0",
+    "@angular/http": "^4.0.0",
     "@angular/platform-browser": "^4.0.0",
     "@angular/platform-browser-dynamic": "^4.0.0",
-    "@angular/http": "^4.0.0",
     "@compodoc/compodoc": "^1.0.0-beta.10",
     "@types/jasmine": "2.5.38",
     "@types/node": "~6.0.60",

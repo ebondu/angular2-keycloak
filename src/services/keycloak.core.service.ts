@@ -414,7 +414,7 @@ export class Keycloak {
 
             let start = useTokenTime ? Keycloak.tokenParsed.iat: (new Date().getTime() / 1000);
             let expiresIn = Keycloak.tokenParsed.exp - start;
-            Keycloak.tokenTimeoutHandle = setTimeout(Keycloak.tokenExpiredBehaviourSubject.next(true), expiresIn * 1000);
+            Keycloak.tokenTimeoutHandle = setTimeout(function(){Keycloak.tokenExpiredBehaviourSubject.next(true);}, expiresIn * 1000);
         } else {
             delete Keycloak.accessToken;
             delete Keycloak.tokenParsed;
