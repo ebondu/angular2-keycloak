@@ -65,6 +65,7 @@ export class Keycloak {
     static idToken:string;
     static refreshToken:string;
     static tokenTimeoutHandle:any;
+    static refreshTokenTimeoutHandle:any;
     static subject:string;
     static sessionId:string;
 
@@ -86,6 +87,7 @@ export class Keycloak {
     static authSuccessBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
     static authErrorBehaviourSubject:BehaviorSubject<any> = new BehaviorSubject({});
     static tokenExpiredBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
+    static refreshTokenExpiredBehaviourSubject:BehaviorSubject<boolean> = new BehaviorSubject(false);
 
     // Keycloak state observables
     static initializedObs:Observable<boolean> = Keycloak.initializedBehaviourSubject.asObservable();
@@ -94,6 +96,7 @@ export class Keycloak {
     static authSuccessObs:Observable<boolean> = Keycloak.authSuccessBehaviourSubject.asObservable();
     static authErrorObs:Observable<boolean> = Keycloak.authErrorBehaviourSubject.asObservable();
     static tokenExpiredObs:Observable<boolean> = Keycloak.tokenExpiredBehaviourSubject.asObservable();
+    static refreshTokenExpiredObs:Observable<boolean> = Keycloak.refreshTokenExpiredBehaviourSubject.asObservable();
 
     // Keycloak methods
     static login(options:any) {
@@ -401,6 +404,11 @@ export class Keycloak {
             Keycloak.tokenTimeoutHandle = null;
         }
 
+        if (Keycloak.refreshTokenTimeoutHandle) {
+            clearTimeout(Keycloak.refreshTokenTimeoutHandle);
+            Keycloak.refreshTokenTimeoutHandle = null;
+        }
+
         if (accessToken) {
             Keycloak.accessToken = accessToken;
             Keycloak.tokenParsed = Token.decodeToken(accessToken);
@@ -426,6 +434,11 @@ export class Keycloak {
         if (refreshToken) {
             Keycloak.refreshToken = refreshToken;
             Keycloak.refreshTokenParsed = Token.decodeToken(refreshToken);
+
+            let start = useTokenTime ? Keycloak.refreshTokenParsed.iat: (new Date().getTime() / 1000);
+            let expiresIn = Keycloak.refreshTokenParsed.exp - start;
+            Keycloak.refreshTokenTimeoutHandle = setTimeout(function(){Keycloak.refreshTokenExpiredBehaviourSubject.next(true);}, expiresIn * 1000);
+
         } else {
             delete Keycloak.refreshToken;
             delete Keycloak.refreshTokenParsed;
