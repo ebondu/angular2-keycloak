@@ -183,7 +183,6 @@ export class Keycloak {
       Accept: 'application/json',
       Authorization: 'bearer ' + this.accessToken
     });
-
     const options: RequestOptionsArgs = { 'headers': headers };
     return (this.http as Http).get(url, options).map(profile => profile.json());
   }
