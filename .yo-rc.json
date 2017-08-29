@@ -1,7 +1,14 @@
 {
-  "generator-angular2-library": {
-    "promptValues": {
-      "gitRepositoryUrl": "https://github.com/ebondu/angular2-keycloak"
-    }
+  "generator-angular-library": {
+    "githubUsername": "ebondu@gmail.com",
+    "githubRepoName": "ngx-keycloak",
+    "npmModuleName": "ngx-keycloak",
+    "moduleGlobal": "ngxKeycloak",
+    "ngModuleName": "NgxKeycloakModule",
+    "selectorPrefix": "component",
+    "projectTitle": "ngx keycloak",
+    "projectDescription": "An angular keycloak wrapper",
+    "authorName": "ebondu",
+    "packageManager": "npm"
   }
 }

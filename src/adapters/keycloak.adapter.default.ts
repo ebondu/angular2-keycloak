@@ -16,44 +16,56 @@
  */
 
 import { Keycloak } from '../services/keycloak.core.service';
+import { Injectable, OnInit } from '@angular/core';
 
 /**
  * Default adapter for web browsers
  */
+@Injectable()
 export class DefaultAdapter {
+  public login(options: any) {
+    if (window) {
+      window.location.href = this.keycloak.createLoginUrl(options);
+    }
+  }
 
-    public login(options: any) {
-        window.location.href = Keycloak.createLoginUrl(options);
+  public logout(options: any) {
+    if (window) {
+      window.location.href = this.keycloak.createLogoutUrl(options);
+    }
+  }
+
+  public register(options: any) {
+    if (window) {
+      window.location.href = this.keycloak.createRegisterUrl(options);
+    }
+  }
+
+  public accountManagement() {
+    if (window) {
+      window.location.href = this.keycloak.createAccountUrl({});
+    }
+  }
+
+  public redirectUri(options: any, encodeHash: boolean): string {
+    if (arguments.length === 1) {
+      encodeHash = true;
     }
 
-    public logout(options: any) {
-        window.location.href = Keycloak.createLogoutUrl(options);
+    if (options && options.redirectUri) {
+      return options.redirectUri;
+    } else {
+      let redirectUri = location.href;
+      if (location.hash && encodeHash) {
+        redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
+        redirectUri +=
+          (redirectUri.indexOf('?') === -1 ? '?' : '&') +
+          'redirect_fragment=' +
+          encodeURIComponent(location.hash.substring(1));
+      }
+      return redirectUri;
     }
+  }
 
-    public register(options: any) {
-        window.location.href = Keycloak.createRegisterUrl(options);
-    }
-
-    public accountManagement() {
-        window.location.href = Keycloak.createAccountUrl({});
-    }
-
-    public redirectUri(options: any, encodeHash: boolean): string {
-
-        if (arguments.length === 1) {
-            encodeHash = true;
-        }
-
-        if (options && options.redirectUri) {
-            return options.redirectUri;
-        } else {
-            let redirectUri = location.href;
-            if (location.hash && encodeHash) {
-                redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
-                redirectUri += (redirectUri.indexOf('?') === -1 ? '?' : '&') + 'redirect_fragment=' +
-                    encodeURIComponent(location.hash.substring(1));
-            }
-            return redirectUri;
-        }
-    }
+  constructor(private keycloak: Keycloak) {}
 }
