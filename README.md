@@ -15,13 +15,7 @@ $ npm install @ebondu/angular2-keycloak --save
 To generate all `*.js`, `*.js.map` and `*.d.ts` files:
 
 ```bash
-$ npm run build
-```
-
-To lint all `*.ts` files:
-
-```bash
-$ npm run lint
+$ npm run build:dist
 ```
 
 ## Usage
@@ -29,7 +23,7 @@ $ npm run lint
 Declare Keycloak module in angular app :
 
 ```javascript
-import { Ng2KeycloakModule } from '@ebondu/angular2-keycloak';
+import { KeycloakModule } from '@ebondu/angular2-keycloak';
 ...
 
 @NgModule({
@@ -37,7 +31,8 @@ import { Ng2KeycloakModule } from '@ebondu/angular2-keycloak';
     AppComponent
   ],
   imports: [
-    Ng2KeycloakModule.forRoot()
+    HttpModule,
+    KeycloakModule.forRoot()
   ],
   providers: [
     ...
@@ -64,7 +59,7 @@ export class MyLoginClass implements OnInit {
   constructor( private keycloak: Keycloak, private keycloakAuthz: KeycloakAuthorization) {
     Keycloak.authenticatedObs.subscribe(auth => {
       this.isAuthenticated = auth;
-      this.parsedToken = Keycloak.tokenParsed;
+      this.parsedToken = this.keycloak.tokenParsed;
 
       console.info('APP: authentication status changed...');
     });
@@ -72,7 +67,7 @@ export class MyLoginClass implements OnInit {
 
   ngOnInit() {
     // Configure the Keycloak
-    Keycloak.config = 'assets/keycloak.json';
+    this.keycloak.config = 'assets/keycloak.json';
 
     // Initialise the Keycloak
     this.keycloakAuthz.init();
@@ -83,15 +78,17 @@ export class MyLoginClass implements OnInit {
   }
 
   login() {
+    // you should pass your login options
     Keycloak.login({});
   }
 
   logout() {
+    // you should pass your logout options
     Keycloak.logout({});
   }
 
   loadProfile() {
-    Keycloak.loadUserProfile().subscribe(profile => {
+    this.keycloak.loadUserProfile().subscribe(profile => {
       this.profile = profile;
     });
   }
@@ -110,7 +107,7 @@ import { Http } from '@angular/http';
 
 @Injectable()
 export class MyClass {
-    // Angualar will inject the instance of the KeycloakHttp class
+    // Angular will inject the instance of the KeycloakHttp class
     constructor(private http: Http) {}
 
     callAPI(): Observable<MyObject> {
