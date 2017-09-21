@@ -98,10 +98,10 @@ export class URIParser {
       if (param) {
         switch (param) {
           case 'redirect_fragment':
-            oauth.fragment = param;
+            oauth.fragment = queryParams[param];
             break;
           case 'prompt':
-            oauth.prompt = param;
+            oauth.prompt = queryParams[param];
             break;
           default:
             if (
