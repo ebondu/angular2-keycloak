@@ -126,7 +126,7 @@ export class URIParser {
       }
       for (const param in fragmentParams) {
         if (param) {
-          oauth[param] = param;
+          oauth[param] = fragmentParams[param];
         }
       }
     }
