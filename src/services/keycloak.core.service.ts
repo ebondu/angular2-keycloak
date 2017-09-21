@@ -659,16 +659,16 @@ export class Keycloak {
     }
   }
 
-  private loadConfig(url: string): Observable<boolean> {
+  private loadConfig(configuration: any): Observable<boolean> {
     return new Observable<boolean>((observer: any) => {
       let configUrl: string = '';
-      if (!this.config) {
+      if (!configuration) {
         configUrl = 'keycloak.json';
-      } else if (typeof this.config === 'string') {
+      } else if (typeof configuration === 'string') {
         configUrl = this.config;
       }
 
-      if (configUrl) {
+      if (configUrl !== '') {
         (this.http as Http)
           .get(configUrl)
           .map(res => res.json())
@@ -682,33 +682,23 @@ export class Keycloak {
             // console.info("Keycloak initialized !");
           });
       } else {
-        if (!this.config['url']) {
-          const scripts = (document.getElementsByTagName(
-            'script'
-          ) as any) as HTMLScriptElement[];
-          for (const script of scripts) {
-            if (script.src.match(/.*keycloak\.js/)) {
-              this.config.url = script.src.substr(
-                0,
-                script.src.indexOf('/js/keycloak.js')
-              );
-              break;
-            }
-          }
-        }
 
-        if (!this.config.realm) {
+        if (!configuration['realm']) {
           throw new Error('realm missing');
         }
 
-        if (!this.config.clientId) {
+        if (!configuration['resource']) {
           throw new Error('clientId missing');
         }
 
-        this.authServerUrl = this.config.url;
-        this.realm = this.config.realm;
-        this.clientId = this.config.clientId;
-        this.clientSecret = (this.config.credentials || {}).secret;
+        if (!configuration['auth-server-url']) {
+          throw new Error('auth server url missing');
+        }
+
+        this.authServerUrl = configuration['auth-server-url'];
+        this.realm = configuration['realm'];
+        this.clientId = configuration['resource'];
+        this.clientSecret = (configuration.credentials || {}).secret;
         observer.next(true);
       }
     });

@@ -158,12 +158,14 @@ export class KeycloakAuthorization {
         .filter((status: any) => status === true)
         .subscribe(status => {
           // console.debug('KC_AUTHZ: this initialized, loading authz...');
+          
+          // using hostname in url is a hack to bypass CORS errors due to KC cache-control
           const url =
             this.keycloak.authServerUrl +
             '/realms/' +
             this.keycloak.realm +
-            '/.well-known/uma-configuration';
-          const headers = new Headers({ 'Accept': 'application/json' });
+            '/.well-known/uma-configuration'+'?origin='+window.location.hostname;
+          const headers = new Headers({ 'Accept': 'application/json'});
           const options: RequestOptionsArgs = { 'headers': headers };
 
           (this.keycloak.http as Http).get(url, options).subscribe(authz => {

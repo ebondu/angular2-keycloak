@@ -1,7 +1,7 @@
 {
   "name": "@ebondu/angular2-keycloak",
   "private": false,
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "An angular keycloak wrapper",
   "main": "./bundles/keycloak.umd.js",
   "module": "./index.js",
@@ -39,10 +39,7 @@
     "type": "git",
     "url": "https://github.com/ebondu/angular2-keycloak"
   },
-  "author": {
-    "name": "ebondu",
-    "email": "dev.ebondu@gmail.com"
-  },
+  "author": "ebondu",
   "keywords": [
     "angular",
     "angular2",
@@ -50,7 +47,6 @@
     "Keycloak",
     "typescript"
   ],
-  "author": "ebondu",
   "license": "Apache2",
   "bugs": {
     "url": "https://github.com/ebondu/angular2-keycloak/issues"

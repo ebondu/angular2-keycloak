@@ -46,9 +46,7 @@ export class KeycloakHttp extends Http {
   static readyBehaviourSubject: BehaviorSubject<boolean> = new BehaviorSubject(
     false
   );
-  static readyObs: Observable<
-    boolean
-  > = KeycloakHttp.readyBehaviourSubject.asObservable();
+  static readyObs: Observable<boolean> = KeycloakHttp.readyBehaviourSubject.asObservable();
 
   private MAX_UNAUTHORIZED_ATTEMPTS: number = 2;
 
