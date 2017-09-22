@@ -665,7 +665,7 @@ export class Keycloak {
       if (!configuration) {
         configUrl = 'keycloak.json';
       } else if (typeof configuration === 'string') {
-        configUrl = this.config;
+        configUrl = configuration;
       }
 
       if (configUrl !== '') {
