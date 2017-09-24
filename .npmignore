@@ -22,3 +22,9 @@ Desktop.ini
 # Mac
 .DS_Store
 **/.DS_Store
+
+/compiled
+
+# or
+
+*.ngFactory.ts

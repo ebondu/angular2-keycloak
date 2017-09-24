@@ -1,4 +1,4 @@
-import { Response, Http } from '@angular/http';
+import { Response, Http, Headers, RequestOptionsArgs } from '@angular/http';
 import { Component, OnInit } from '@angular/core';
 import { Keycloak, KeycloakAuthorization } from '@ebondu/angular2-keycloak';
 import 'rxjs/operator/map';
@@ -55,9 +55,11 @@ export class HomeComponent implements OnInit {
   }
 
   reloadData() {
+    let headers = new Headers({ 'Content-Type': 'application/json', 'Accept' :'application/json'});
+    let options: RequestOptionsArgs = { headers: headers, withCredentials: true };
 
     // change regarding your backend address
-    this.http.get('/database/products')
+    this.http.get('/database/products', options)
       .map((res: Response) => res.json())
       .subscribe(prods => this.products = prods,
         error => console.log(error));

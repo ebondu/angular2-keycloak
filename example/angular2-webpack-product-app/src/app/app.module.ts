@@ -18,7 +18,7 @@ import { removeNgStyles, createNewHosts } from '@angularclass/hmr';
     BrowserModule,
     HttpModule,
     FormsModule,
-    Ng2KeycloakModule,
+    Ng2KeycloakModule.forRoot(),
     routing
   ],
   declarations: [
