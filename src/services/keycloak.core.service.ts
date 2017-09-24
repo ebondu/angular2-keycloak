@@ -494,7 +494,7 @@ export class Keycloak {
         : new Date().getTime() / 1000;
       const expiresIn = this.tokenParsed.exp - start;
       this.tokenTimeoutHandle = setTimeout(
-        this.pushTokenExpired(),
+        this.pushTokenExpired,
         expiresIn * 1000
       );
     } else {
@@ -514,7 +514,7 @@ export class Keycloak {
         : new Date().getTime() / 1000;
       const expiresIn = this.refreshTokenParsed.exp - start;
       this.refreshTokenTimeoutHandle = setTimeout(
-        this.pushTokenExpired(),
+        this.pushTokenExpired,
         expiresIn * 1000
       );
     } else {
