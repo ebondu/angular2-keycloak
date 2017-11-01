@@ -122,10 +122,10 @@ export class MyClass {
 }
 ```
 
-## Example
+## Examples
 
-See [`angular2-webpack-product-app`](https://github.com/ebondu/angular2-keycloak/blob/master/example/angular2-webpack-product-app)
-
+* [`angular2-webpack-product-app`](https://github.com/ebondu/angular2-keycloak/blob/master/example/angular2-webpack-product-app)
+* [`angular-cli-example-app`](https://github.com/ebondu/angular2-keycloak/blob/master/example/angular-cli-example-app)
 ## License
 
 Apache2 © [ebondu](dev.ebondu@gmail.com)
