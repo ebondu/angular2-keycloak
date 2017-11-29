@@ -24,6 +24,7 @@
     "@ebondu/angular2-keycloak": "^0.9.4",
     "angular2-uuid": "^1.1.1",
     "core-js": "^2.5.1",
+    "reflect-metadata": "^0.1.10",
     "rxjs": "^5.5.2",
     "zone.js": "^0.8.18"
   },
