@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Keycloak, KeycloakAuthorization } from "@ebondu/angular2-keycloak";
 import { Http } from "@angular/http";
 
@@ -7,7 +7,7 @@ import { Http } from "@angular/http";
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'app';
   public parsedToken: any;
   public isAuthenticated: boolean;
