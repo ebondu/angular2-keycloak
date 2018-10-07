@@ -1,20 +1,25 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
-    "target": "ES5",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
     "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": ["es2015", "dom"],
-    "strict": true,
-    "skipLibCheck": true
-  },
-  "include": [
-    "src",
-    "custom-typings.d.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "target": "es5",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "paths": {
+      "@ebondu/angular-keycloak": [
+        "dist/ebondu/angular-keycloak"
+      ]
+    }
+  }
 }

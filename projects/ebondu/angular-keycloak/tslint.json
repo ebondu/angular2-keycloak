@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tslint.json",
+  "rules": {
+    "directive-selector": [
+      true,
+      "attribute",
+      "keycloak",
+      "camelCase"
+    ],
+    "component-selector": [
+      true,
+      "element",
+      "keycloak",
+      "kebab-case"
+    ]
+  }
+}

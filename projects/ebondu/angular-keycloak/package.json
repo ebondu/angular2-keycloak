@@ -1,0 +1,27 @@
+{
+  "name": "@ebondu/angular2-keycloak",
+  "private": false,
+  "version": "1.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ebondu/angular2-keycloak.git"
+  },
+  "author": {
+    "name": "ebondu"
+  },
+  "keywords": [
+    "angular",
+    "angular6",
+    "Keycloak",
+    "typescript"
+  ],
+  "license": "Apache2",
+  "bugs": {
+    "url": "https://github.com/ebondu/angular2-keycloak.git/issues"
+  },
+  "peerDependencies": {
+    "@angular/common": "^6.1.0 || ^6.0.0",
+    "@angular/core": "^6.1.0 || ^6.0.0",
+    "angular2-uuid": "^1.1.1"
+  }
+}

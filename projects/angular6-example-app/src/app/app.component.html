@@ -1,0 +1,21 @@
+<div *ngIf="!isAuthenticated">
+  <button (click)="login()">Login</button>
+</div>
+
+<div *ngIf="isAuthenticated">
+  <div>
+    This is your token :
+    <br>
+    {{parsedToken | json}}
+  </div>
+  <button (click)="logout()">Logout</button>
+  <br>
+
+  <button (click)="loadProfile()">Load Profile</button>
+
+  <div *ngIf="profile">
+    This is your profile :
+    <br>
+    {{profile | json}}
+  </div>
+</div>
