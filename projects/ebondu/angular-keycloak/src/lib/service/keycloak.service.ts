@@ -59,6 +59,7 @@ export class KeycloakService {
   public initializedAuthzdObs: Observable<boolean>;
   public authenticationObs: Observable<boolean>;
   public tokenExpiredObs: Observable<boolean>;
+  public authenticationErrorObs: Observable<any>;
   // tokens
   public accessToken: string;
   public tokenParsed: any;
@@ -68,6 +69,7 @@ export class KeycloakService {
   private initAuthzBS: BehaviorSubject<boolean>;
   private authenticationsBS: BehaviorSubject<boolean>;
   private tokenExpiredBS: BehaviorSubject<boolean>;
+  private authenticationErrorBS: BehaviorSubject<any>;
   private refreshToken: string;
   private refreshTokenParsed: any;
   private rpt: string;
@@ -102,6 +104,9 @@ export class KeycloakService {
 
     this.tokenExpiredBS = new BehaviorSubject<boolean>(false);
     this.tokenExpiredObs = this.tokenExpiredBS.asObservable();
+
+    this.authenticationErrorBS = new BehaviorSubject<any>(null);
+    this.authenticationErrorObs = this.authenticationErrorBS.asObservable();
 
     // console.log('Keycloak service created with init options and configuration file', initOptions, configUrl, http);
 
@@ -167,9 +172,9 @@ export class KeycloakService {
       const timeLocal = new Date().getTime();
 
       if (error) {
+        const errorData = {error: error, error_description: oauth.error_description};
+        this.authenticationErrorBS.next(errorData);
         if (prompt !== 'none') {
-          const errorData = {error: error, error_description: oauth.error_description};
-          // this.authErrorBehaviourSubject.next(errorData);
           // console.log('error while processing callback');
           observer.next(true);
         }
@@ -211,6 +216,7 @@ export class KeycloakService {
             oauth);
           observer.next(true);
         }, (errorToken => {
+          this.authenticationErrorBS.next({error: errorToken, error_description: 'unable to get token from server'});
           // console.log('Unable to get token', errorToken);
           observer.next(true);
         }));
@@ -647,8 +653,7 @@ export class KeycloakService {
     if ((this.tokenParsed && this.tokenParsed.nonce !== oauth.storedNonce) ||
       (this.refreshTokenParsed && this.refreshTokenParsed.nonce !== oauth.storedNonce) ||
       (this.idTokenParsed && this.idTokenParsed.nonce !== oauth.storedNonce)) {
-
-      console.error('invalid nonce!');
+      this.authenticationErrorBS.next({error: 'invalid_nonce', error_description: 'the provided nonce does not match stored nonce'});
       this.clearToken({});
     } else {
       this.timeSkew = Math.floor(passedTimeLocal / 1000) - this.tokenParsed.iat;
