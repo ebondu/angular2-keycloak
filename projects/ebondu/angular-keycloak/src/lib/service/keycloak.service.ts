@@ -136,7 +136,7 @@ export class KeycloakService {
     this.initializedObs.pipe(filter(initialized => initialized)).subscribe(next => {
       // console.log('Keycloak initialized, initializing authz service', this);
       if (next) {
-        const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma-configuration';
+        const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma2-configuration';
         this.http.get(url).subscribe(authz => {
           // console.log('Authz configuration file loaded, continuing authz');
           this.umaConfig = authz;
@@ -591,8 +591,12 @@ export class KeycloakService {
     return new Observable<boolean>((observer: any) => {
       if (wwwAuthenticateHeader.indexOf('UMA') !== -1) {
         const params = wwwAuthenticateHeader.split(',');
-        let headers: HttpHeaders = new HttpHeaders();
-        let body: any;
+
+        let paramsToSend: HttpParams = new HttpParams();
+        let headers = new HttpHeaders();
+        headers = headers.set('Content-type', 'application/x-www-form-urlencoded');
+
+        const formData: FormData = new FormData();
         for (let i = 0; i < params.length; i++) {
           const param = params[i].split('=');
 
@@ -600,20 +604,21 @@ export class KeycloakService {
             const ticket = param[1].substring(1, param[1].length - 1).trim();
 
             headers = headers.set('Authorization', 'Bearer ' + this.accessToken);
-            body = {
-              ticket: ticket,
-              rpt: this.accessToken
-            };
+            paramsToSend = paramsToSend.set('ticket', ticket);
+            paramsToSend = paramsToSend.set('grant_type', 'urn:ietf:params:oauth:grant-type:uma-ticket');
+            paramsToSend = paramsToSend.set('rpt', this.accessToken);
+            paramsToSend = paramsToSend.set('client_id', this.keycloakConfig.clientId);
           }
         }
 
         // console.log('calling rpt endpoint with body', body);
-        this.http.post(this.umaConfig.rpt_endpoint, body, {withCredentials: false, headers: headers}).subscribe(
+        this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: false, headers: headers}).subscribe(
           (token: any) => {
 
             console.log('Authorization granted by the server.');
             // Token retrieved
-            this.accessToken = token.rpt;
+            this.accessToken = token.access_token;
+            this.refreshToken = token.refresh_token;
             observer.next(true);
 
           }, error => {
