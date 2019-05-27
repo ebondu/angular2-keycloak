@@ -615,7 +615,7 @@ export class KeycloakService {
         this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: false, headers: headers}).subscribe(
           (token: any) => {
 
-            console.log('Authorization granted by the server.');
+            // console.log('Authorization granted by the server.');
             // Token retrieved
             this.accessToken = token.access_token;
             this.refreshToken = token.refresh_token;
