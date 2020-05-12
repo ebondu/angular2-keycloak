@@ -13,6 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "aot": true,
             "outputPath": "dist/ng-keycloak",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -29,6 +30,12 @@
           },
           "configurations": {
             "production": {
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -132,7 +139,8 @@
           "configurations": {
             "production": {
               "project": "projects/ebondu/angular-keycloak/ng-package.prod.json"
-            }
+            ,              "tsConfig": "projects/ebondu/angular-keycloak/tsconfig.lib.prod.json"
+}
           }
         },
         "test": {
@@ -167,6 +175,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "aot": true,
             "outputPath": "dist/angular6-example-app",
             "index": "projects/angular6-example-app/src/index.html",
             "main": "projects/angular6-example-app/src/main.ts",
@@ -183,6 +192,12 @@
           },
           "configurations": {
             "production": {
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
               "fileReplacements": [
                 {
                   "replace": "projects/angular6-example-app/src/environments/environment.ts",

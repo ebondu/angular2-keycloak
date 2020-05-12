@@ -17,7 +17,7 @@
 
 
 import { Injectable, Injector } from '@angular/core';
-import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 
 import { Observable } from 'rxjs';
 import { KeycloakService } from '../service/keycloak.service';
@@ -27,7 +27,9 @@ import { UUID } from 'angular2-uuid';
 @Injectable()
 export class KeycloakInterceptor implements HttpInterceptor {
 
-  private keycloak: KeycloakService;
+  get keycloak() {
+    return this.injector.get(KeycloakService);
+  }
 
   private id: UUID = UUID.UUID();
 
@@ -36,11 +38,6 @@ export class KeycloakInterceptor implements HttpInterceptor {
   }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-
-    if (!this.keycloak) {
-      this.keycloak = this.injector.get(KeycloakService);
-      // console.log('Keycloak service :: ', this.keycloak);
-    }
 
     if (req.withCredentials && !req.headers.has('Authorization')) {
 
