@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
+import { Inject, Injectable, Injector, Optional, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -87,7 +87,11 @@ export class KeycloakService {
   private resourceAccess;
   private loginIframe: KeycloakCheckLoginIframe;
 
-  constructor(public http: HttpClient,
+  get http() {
+    return this.injector.get(HttpClient);
+  }
+
+  constructor(private injector: Injector,
               @Optional() @Inject(KEYCLOAK_JSON_PATH) private configUrl: string,
               @Optional() @Inject(KEYCLOAK_CONF) public keycloakConfig: KeycloakConfiguration,
               @Inject(KEYCLOAK_INIT_OPTIONS) public initOptions: KeycloakInitOptions,
