@@ -551,7 +551,11 @@ export class KeycloakService {
       this.processCallback(callback).subscribe(callbackProcessed => {
         this.initBS.next(true);
         if (this.initOptions.checkLoginIframe) {
-          this.loginIframe = new KeycloakCheckLoginIframe(this, this.initOptions.checkLoginIframeInterval);
+          this.loginIframe = new KeycloakCheckLoginIframe(
+            this,
+            this.initOptions.checkLoginIframeInterval,
+            this.initOptions.silentCheckSsoRedirectUri
+          );
         }
       });
     } else if (this.initOptions) {
@@ -560,7 +564,11 @@ export class KeycloakService {
         this.timeSkew = this.initOptions.timeSkew || 0;
 
         if (this.initOptions.checkLoginIframe) {
-          this.loginIframe = new KeycloakCheckLoginIframe(this, this.initOptions.checkLoginIframeInterval);
+          this.loginIframe = new KeycloakCheckLoginIframe(
+            this,
+            this.initOptions.checkLoginIframeInterval,
+            this.initOptions.silentCheckSsoRedirectUri
+          );
         } else {
           this.initBS.next(true);
         }
@@ -570,11 +578,14 @@ export class KeycloakService {
 
             // console.log('login iframe ? ' + this.initOptions.checkLoginIframe);
             if (this.initOptions.checkLoginIframe) {
-              // TODO
               this.login({prompt: 'none'});
-              this.loginIframe = new KeycloakCheckLoginIframe(this, this.initOptions.checkLoginIframeInterval);
+              this.loginIframe = new KeycloakCheckLoginIframe(
+                this,
+                this.initOptions.checkLoginIframeInterval,
+                this.initOptions.silentCheckSsoRedirectUri
+              );
             } else {
-              this.login({prompt: 'none'});
+              this.initBS.next(true);
             }
             break;
           case KeycloakOnLoad.LOGIN_REQUIRED:

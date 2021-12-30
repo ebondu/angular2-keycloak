@@ -85,6 +85,11 @@ export interface KeycloakInitOptions {
   checkLoginIframeInterval?: number;
 
   /**
+   * Set the redirect uri to silent check login state.
+   */
+  silentCheckSsoRedirectUri?: string;
+
+  /**
    * Set the OpenID Connect response mode to send to Keycloak upon login.
    * @default fragment After successful authentication Keycloak will redirect
    *                   to JavaScript application with OpenID Connect parameters
