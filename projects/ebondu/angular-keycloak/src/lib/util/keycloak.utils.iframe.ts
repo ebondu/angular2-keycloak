@@ -34,7 +34,7 @@ export class KeycloakCheckLoginIframe {
     this.checkBS = new BehaviorSubject<boolean>(null);
     this.checkObs = this.checkBS.asObservable();
     this.interval = checkInterval;
-    this.silentCheckSsoRedirectUri = silentCheckSsoRedirectUri;
+    this.silentCheckSsoRedirectUri = !!silentCheckSsoRedirectUri ? silentCheckSsoRedirectUri : '/';
     this.initIframe();
   }
 
