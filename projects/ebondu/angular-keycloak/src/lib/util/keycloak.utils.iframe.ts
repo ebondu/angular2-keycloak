@@ -28,11 +28,13 @@ export class KeycloakCheckLoginIframe {
   private iframeOrigin: any;
   private interval: number;
   private checkBS: BehaviorSubject<boolean>;
+  private silentCheckSsoRedirectUri: string;
 
-  constructor(private keycloak: KeycloakService, checkInterval: number) {
+  constructor(private keycloak: KeycloakService, checkInterval: number, silentCheckSsoRedirectUri: string) {
     this.checkBS = new BehaviorSubject<boolean>(null);
     this.checkObs = this.checkBS.asObservable();
     this.interval = checkInterval;
+    this.silentCheckSsoRedirectUri = silentCheckSsoRedirectUri;
     this.initIframe();
   }
 
@@ -40,27 +42,11 @@ export class KeycloakCheckLoginIframe {
     // console.log('Configuring login iframe...');
     this.iframe = document.createElement('iframe');
     this.iframe.onload = (() => {
-      const realmUrl = this.keycloak.getRealmUrl();
-
-      if (realmUrl.charAt(0) === '/') {
-        if (!window.location.origin) {
-          this.iframeOrigin = window.location.protocol
-            + '//' + window.location.hostname
-            + (window.location.port ? ': ' + window.location.port : '');
-        } else {
-          this.iframeOrigin = window.location.origin;
-        }
-      } else {
-        this.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
-      }
-      // console.log('login iframe LOADED');
-      // console.log('contentWindow :', this.iframe.contentWindow);
       setTimeout(() => this.checkIframe(), this.interval);
     });
 
-    const src = this.keycloak.getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
-    // console.log('configuring iframe url to ' + src);
-    this.iframe.setAttribute('src', src);
+    // console.log('configuring iframe url to ' + this.silentCheckSsoRedirectUri);
+    this.iframe.setAttribute('src', this.silentCheckSsoRedirectUri);
     this.iframe.style.display = 'none';
     document.body.appendChild(this.iframe);
     window.addEventListener('message', () => this.processCallbackMessage(event), false);
@@ -68,9 +54,9 @@ export class KeycloakCheckLoginIframe {
 
   private checkIframe() {
     const msg = this.keycloak.keycloakConfig.clientId + ' ' + this.keycloak.sessionId;
-    const origin = this.iframeOrigin;
+    const origin = this.silentCheckSsoRedirectUri.substring(0, this.silentCheckSsoRedirectUri.indexOf('/', 8));
 
-    // // console.log('sending message to iframe ' + msg + ' origin :' + origin);
+    // console.log('sending message to iframe ' + msg + ' origin :' + origin);
     this.iframe.contentWindow.postMessage(msg, origin);
     setTimeout(() => this.checkIframe(), this.interval);
   }
