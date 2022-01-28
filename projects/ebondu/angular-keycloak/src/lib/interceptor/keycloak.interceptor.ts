@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ebondu and/or its affiliates
+ * Copyright 2022 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 
 
 import { Injectable, Injector } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 
 import { Observable } from 'rxjs';
 import { KeycloakService } from '../service/keycloak.service';
@@ -44,7 +44,7 @@ export class KeycloakInterceptor implements HttpInterceptor {
       return new Observable<HttpEvent<any>>((observer: any) => {
 
         this.keycloak.initializedObs.pipe(filter(initialized => initialized)).subscribe(initialized => {
-          this.keycloak.initializedAuthzdObs.pipe(filter(authzInit => authzInit)).subscribe(authzInit => {
+          this.keycloak.initializedAuthzObs.pipe(filter(authzInit => authzInit)).subscribe(authzInit => {
             if (!this.keycloak.accessToken) {
               // console.log('Login required...');
               this.keycloak.login({});

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ebondu and/or its affiliates
+ * Copyright 2022 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,6 +88,8 @@ export interface KeycloakInitOptions {
    * Set the redirect uri to silent check login state.
    */
   silentCheckSsoRedirectUri?: string;
+
+  silentCheckSsoFallback?: boolean;
 
   /**
    * Set the OpenID Connect response mode to send to Keycloak upon login.

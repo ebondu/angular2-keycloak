@@ -1,7 +1,7 @@
 {
   "name": "@ebondu/angular2-keycloak",
   "private": false,
-  "version": "1.4.2",
+  "version": "1.4.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/ebondu/angular2-keycloak.git"
@@ -11,7 +11,7 @@
   },
   "keywords": [
     "angular",
-    "angular12",
+    "angular13",
     "Keycloak",
     "typescript"
   ],
@@ -20,8 +20,8 @@
     "url": "https://github.com/ebondu/angular2-keycloak.git/issues"
   },
   "peerDependencies": {
-    "@angular/common": "^12.1.4",
-    "@angular/core": "^12.1.4",
-    "angular2-uuid": "^1.1.1"
+    "@angular/common": "^13.2.0",
+    "@angular/core": "^13.2.0",
+    "uuid": "^8.3.2"
   }
 }

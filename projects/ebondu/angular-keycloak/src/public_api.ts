@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ebondu and/or its affiliates
+ * Copyright 2022 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,9 @@ export * from './lib/adapter/keycloak.adapter.cordova';
 export * from './lib/adapter/keycloak.adapter.default';
 export * from './lib/storage/keycloak.storage.cookie';
 export * from './lib/storage/keycloak.storage.local';
-export * from './lib/util/keycloak.utils.iframe';
+export * from './lib/util/keycloak.utils.check-login-iframe';
+export * from './lib/util/keycloak.utils.silent-check-login-iframe';
+export * from './lib/util/keycloak.utils.check-3pCookies-iframe';
 export * from './lib/util/keycloak.utils.token';
 export * from './lib/util/keycloak.utils.URIParser';
 

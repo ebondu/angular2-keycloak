@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ebondu and/or its affiliates
+ * Copyright 2022 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ import { Inject, Injectable, Injector, Optional, PLATFORM_ID } from '@angular/co
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { UUID } from 'angular2-uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { DefaultAdapter } from '../adapter/keycloak.adapter.default';
 import { LocalStorage } from '../storage/keycloak.storage.local';
 import { URIParser } from '../util/keycloak.utils.URIParser';
@@ -39,7 +39,9 @@ import {
 import { filter } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
-import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.iframe';
+import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
+import { KeycloakSilentCheckLoginIframe } from '../util/keycloak.utils.silent-check-login-iframe';
+import { KeycloakCheck3pCookiesIframe } from '../util/keycloak.utils.check-3pCookies-iframe';
 import { isPlatformBrowser } from '@angular/common';
 
 /**
@@ -56,7 +58,7 @@ import { isPlatformBrowser } from '@angular/common';
 export class KeycloakService {
 
   public initializedObs: Observable<boolean>;
-  public initializedAuthzdObs: Observable<boolean>;
+  public initializedAuthzObs: Observable<boolean>;
   public authenticationObs: Observable<boolean>;
   public tokenExpiredObs: Observable<boolean>;
   public authenticationErrorObs: Observable<any>;
@@ -101,7 +103,7 @@ export class KeycloakService {
     this.initializedObs = this.initBS.asObservable();
 
     this.initAuthzBS = new BehaviorSubject(false);
-    this.initializedAuthzdObs = this.initAuthzBS.asObservable();
+    this.initializedAuthzObs = this.initAuthzBS.asObservable();
 
     this.authenticationsBS = new BehaviorSubject(false);
     this.authenticationObs = this.authenticationsBS.asObservable();
@@ -111,8 +113,7 @@ export class KeycloakService {
 
     this.authenticationErrorBS = new BehaviorSubject<any>(null);
     this.authenticationErrorObs = this.authenticationErrorBS.asObservable();
-
-    // console.log('Keycloak service created with init options and configuration file', initOptions, configUrl, http);
+    // console.log('Keycloak service created with init options and configuration file', initOptions, configUrl);
 
     if (!isPlatformBrowser(platformId)) {
       // console.log('Keycloak service init only available on browser platform');
@@ -133,7 +134,7 @@ export class KeycloakService {
     } else if (keycloakConfig) {
       this.initService();
     } else {
-      // console.log('Keycloak service init fails : no keycloak.json or configuration provided')
+      // console.log('Keycloak service init fails : no keycloak.json or configuration provided');
       this.initBS.next(false);
     }
 
@@ -358,7 +359,7 @@ export class KeycloakService {
    */
   authorize(wwwAuthenticateHeader: string): Observable<boolean> {
     return new Observable<boolean>((observer: any) => {
-      this.initializedAuthzdObs.pipe(filter(initialized => initialized)).subscribe(next => {
+      this.initializedAuthzObs.pipe(filter(initialized => initialized)).subscribe(next => {
         this.processAuthz(wwwAuthenticateHeader).subscribe(authorized => {
             observer.next(authorized);
           }
@@ -378,7 +379,7 @@ export class KeycloakService {
           this.rpt = token.rpt;
           observer.next(true);
         }, (error => {
-          console.log('Unable to get entitlement', error);
+          // console.log('Unable to get entitlement', error);
           observer.next(true);
         })
       );
@@ -400,8 +401,8 @@ export class KeycloakService {
   // ###################################
 
   createLoginUrl(options: any): string {
-    const state = UUID.UUID();
-    const nonce = UUID.UUID();
+    const state = uuidv4();
+    const nonce = uuidv4();
 
     let redirectUri = this.adapter.redirectUri(options);
     if (options && options.prompt) {
@@ -516,7 +517,7 @@ export class KeycloakService {
     try {
       this.callbackStorage = new LocalStorage();
     } catch (e) {
-      console.log('Unable to create a local storage, using cookie storage');
+      // console.log('Unable to create a local storage, using cookie storage');
       this.callbackStorage = new CookieStorage();
     }
 
@@ -539,60 +540,49 @@ export class KeycloakService {
         this.responseType = KeycloakResponseType.CODE_ID_TOKEN;
         break;
       default:
-        console.log('Invalid value for flow');
+        // console.log('Invalid value for flow');
     }
 
     // Callback
     // console.log('processing callback ', window.location.href);
     const callback = this.parseCallback(window.location.href);
-
     if (callback) {
       window.history.replaceState({}, null, callback.newUrl);
       this.processCallback(callback).subscribe(callbackProcessed => {
         this.initBS.next(true);
-        if (this.initOptions.checkLoginIframe) {
-          this.loginIframe = new KeycloakCheckLoginIframe(
-            this,
-            this.initOptions.checkLoginIframeInterval,
-            this.initOptions.silentCheckSsoRedirectUri
-          );
-        }
       });
     } else if (this.initOptions) {
       if (this.initOptions.token || this.initOptions.refreshToken) {
         this.setToken(this.initOptions.token, this.initOptions.refreshToken, this.initOptions.idToken, false);
         this.timeSkew = this.initOptions.timeSkew || 0;
-
-        if (this.initOptions.checkLoginIframe) {
-          this.loginIframe = new KeycloakCheckLoginIframe(
-            this,
-            this.initOptions.checkLoginIframeInterval,
-            this.initOptions.silentCheckSsoRedirectUri
-          );
-        } else {
-          this.initBS.next(true);
-        }
+        this.initBS.next(true);
       } else if (this.initOptions.onLoad) {
         switch (this.initOptions.onLoad) {
           case KeycloakOnLoad.CHECK_SSO:
-
-            // console.log('login iframe ? ' + this.initOptions.checkLoginIframe);
-            if (this.initOptions.checkLoginIframe) {
-              this.login({prompt: 'none'});
-              this.loginIframe = new KeycloakCheckLoginIframe(
-                this,
-                this.initOptions.checkLoginIframeInterval,
-                this.initOptions.silentCheckSsoRedirectUri
-              );
-            } else {
-              this.initBS.next(true);
+            if (this.initOptions.silentCheckSsoRedirectUri) {
+              new KeycloakCheck3pCookiesIframe(this).supportedObs.subscribe(supported => {
+                if (supported) {
+                  const silentCheckIframe = new KeycloakSilentCheckLoginIframe(
+                    this,
+                    this.initOptions.silentCheckSsoRedirectUri
+                  );
+                  // console.log('silent check Iframe', silentCheckIframe);
+                } else if (supported != null && !supported && this.initOptions.silentCheckSsoFallback) {
+                  // console.log('Falling back to check-sso with redirect');
+                  this.login({
+                    prompt: 'none',
+                    redirectUri: window.location.href
+                  });
+                }
+              });
             }
+            this.initBS.next(true);
             break;
           case KeycloakOnLoad.LOGIN_REQUIRED:
             this.login({});
             break;
           default:
-          // console.log('Invalid value for onLoad');
+            // console.log('Invalid value for onLoad');
         }
       } else {
         this.initBS.next(true);
@@ -625,8 +615,6 @@ export class KeycloakService {
             paramsToSend = paramsToSend.set('client_id', this.keycloakConfig.clientId);
           }
         }
-
-        // console.log('calling rpt endpoint with body', body);
         this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: false, headers: headers}).subscribe(
           (token: any) => {
 
@@ -639,10 +627,10 @@ export class KeycloakService {
           }, error => {
 
             if (error.status === 403) {
-              console.error('Authorization request was denied by the server.');
+              // console.error('Authorization request was denied by the server.');
               observer.next(true);
             } else {
-              console.error('Could not obtain authorization data from server.');
+              // console.error('Could not obtain authorization data from server.');
               observer.next(true);
             }
           }
