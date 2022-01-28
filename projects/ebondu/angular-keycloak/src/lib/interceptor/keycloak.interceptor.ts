@@ -22,7 +22,6 @@ import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
 import { Observable } from 'rxjs';
 import { KeycloakService } from '../service/keycloak.service';
 import { filter, first } from 'rxjs/operators';
-import { UUID } from 'angular2-uuid';
 
 @Injectable()
 export class KeycloakInterceptor implements HttpInterceptor {
@@ -31,10 +30,8 @@ export class KeycloakInterceptor implements HttpInterceptor {
     return this.injector.get(KeycloakService);
   }
 
-  private id: UUID = UUID.UUID();
-
   constructor(private injector: Injector) {
-    // console.log('Keycloak interceptor created :: ', this.id);
+
   }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
