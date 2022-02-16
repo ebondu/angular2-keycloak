@@ -83,23 +83,23 @@ export class KeycloakInterceptor implements HttpInterceptor {
                           next.handle(authReqWithRpt).subscribe(event => {
                             observer.next(event);
                           }, errorEndpoint => {
-                            observer.error(errorEndpoint.message);
+                            observer.error(errorEndpoint);
                           });
                         },
                         (error_authz: any) => {
                           // console.log('Unable to authorize request', error_authz);
-                          observer.error(error.message);
+                          observer.error(error);
                         }
                       );
                     } else {
-                      observer.error(error.message);
+                      observer.error(error);
                     }
                   } else {
                     // console.log('Error while calling endpoint', error);
-                    observer.error(error.message);
+                    observer.error(error);
                   }
                 } else {
-                  observer.error(error.message);
+                  observer.error(error);
                 }
               });
           });
