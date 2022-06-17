@@ -17,7 +17,7 @@
 
 import { Inject, Injectable, Injector, Optional, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { v4 as uuidv4 } from 'uuid';
 import { DefaultAdapter } from '../adapter/keycloak.adapter.default';
@@ -36,7 +36,7 @@ import {
   KeycloakResponseMode,
   KeycloakResponseType
 } from '../model/keycloak-config.model';
-import { filter } from 'rxjs/operators';
+import { filter, switchMap, tap } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
 import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
@@ -244,13 +244,11 @@ export class KeycloakService {
 
   updateToken(minValidity: number): Observable<string> {
 
-    return new Observable<string>((observer: any) => {
-
       minValidity = minValidity || 5;
 
       if (!this.isTokenExpired(minValidity)) {
         // console.log('token still valid');
-        observer.next(this.accessToken);
+        return of(this.accessToken);
       } else {
         if (this.isRefreshTokenExpired(5)) {
           this.login(this.keycloakConfig);
@@ -280,11 +278,10 @@ export class KeycloakService {
             this.setToken(token['access_token'], token['refresh_token'], token['id_token'], true);
 
             this.timeSkew = Math.floor(timeLocal / 1000) - this.tokenParsed.iat;
-            observer.next(token['access_token']);
+            return of(token['access_token']);
           });
         }
-      }
-    });
+    }
   }
 
   register(options: any) {
@@ -358,32 +355,26 @@ export class KeycloakService {
    * depending on how the policy enforcer at the resource server was configured.
    */
   authorize(wwwAuthenticateHeader: string): Observable<boolean> {
-    return new Observable<boolean>((observer: any) => {
-      this.initializedAuthzObs.pipe(filter(initialized => initialized)).subscribe(next => {
-        this.processAuthz(wwwAuthenticateHeader).subscribe(authorized => {
-            observer.next(authorized);
-          }
-        );
-      });
-    });
+    return this.initializedAuthzObs.pipe(
+      filter(initialized => initialized),
+      switchMap(() => {
+        return this.processAuthz(wwwAuthenticateHeader);
+      })
+    );
   }
 
   /**
    * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
    */
-  entitlement(resourceSeververId: string): Observable<boolean> {
-    return new Observable<boolean>((observer) => {
-      const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/authz/entitlement/' + resourceSeververId;
+  entitlement(resourceServerId: string): Observable<boolean> {
+      const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/authz/entitlement/' + resourceServerId;
       const headers = new HttpHeaders({'Authorization': 'Bearer ' + this.accessToken});
-      this.http.get(url, {headers: headers, withCredentials: false}).subscribe((token: any) => {
-          this.rpt = token.rpt;
-          observer.next(true);
-        }, (error => {
-          // console.log('Unable to get entitlement', error);
-          observer.next(true);
-        })
-      );
-    });
+      return this.http.get(url, {headers: headers, withCredentials: false})
+        .pipe(
+          tap((token: any) => {
+            this.rpt = token.rpt;
+          })
+        );
   }
 
   public clearToken(initOptions: any) {

@@ -1,7 +1,7 @@
 {
   "name": "@ebondu/angular2-keycloak",
   "private": false,
-  "version": "1.4.5",
+  "version": "1.4.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/ebondu/angular2-keycloak.git"
@@ -20,8 +20,8 @@
     "url": "https://github.com/ebondu/angular2-keycloak.git/issues"
   },
   "peerDependencies": {
-    "@angular/common": "^13.2.0",
-    "@angular/core": "^13.2.0",
+    "@angular/common": "13.2.5",
+    "@angular/core": "13.2.5",
     "uuid": "^8.3.2"
   }
 }
