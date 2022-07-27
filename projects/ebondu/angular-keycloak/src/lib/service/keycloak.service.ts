@@ -17,7 +17,7 @@
 
 import { Inject, Injectable, Injector, Optional, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, of } from 'rxjs';
 
 import { v4 as uuidv4 } from 'uuid';
 import { DefaultAdapter } from '../adapter/keycloak.adapter.default';
@@ -36,7 +36,7 @@ import {
   KeycloakResponseMode,
   KeycloakResponseType
 } from '../model/keycloak-config.model';
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { filter, first, map, switchMap, tap } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
 import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
@@ -160,8 +160,11 @@ export class KeycloakService {
     const oauthState = this.callbackStorage.get(state);
 
     if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
+      oauth.valid = true;
       oauth.redirectUri = oauthState.redirectUri;
       oauth.storedNonce = oauthState.nonce;
+      oauth.prompt = oauthState.prompt;
+      oauth.pkceCodeVerifier = oauthState.pkceCodeVerifier;
       if (oauth.fragment) {
         oauth.newUrl += '#' + oauth.fragment;
       }
@@ -208,6 +211,10 @@ export class KeycloakService {
         }
         params = params.set('redirect_uri', oauth.redirectUri);
 
+        if (oauth.pkceCodeVerifier) {
+          params = params.set('code_verifier', oauth.pkceCodeVerifier);
+        }
+
         const options = {headers: headers, withCredentials: withCredentials};
         const body = null;
         this.http.post(url, params, options).subscribe(token => {
@@ -219,6 +226,7 @@ export class KeycloakService {
             this.initOptions.flow === KeycloakFlow.STANDARD,
             timeLocal,
             oauth);
+          this.authenticationsBS.next(true);
           observer.next(true);
         }, (errorToken => {
           this.authenticationErrorBS.next({error: errorToken, error_description: 'unable to get token from server'});
@@ -252,6 +260,7 @@ export class KeycloakService {
       } else {
         if (this.isRefreshTokenExpired(5)) {
           this.login(this.keycloakConfig);
+          return EMPTY;
         } else {
           // console.log('refreshing token');
           let params: HttpParams = new HttpParams();
@@ -367,14 +376,14 @@ export class KeycloakService {
    * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
    */
   entitlement(resourceServerId: string): Observable<boolean> {
-      const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/authz/entitlement/' + resourceServerId;
-      const headers = new HttpHeaders({'Authorization': 'Bearer ' + this.accessToken});
-      return this.http.get(url, {headers: headers, withCredentials: false})
-        .pipe(
-          tap((token: any) => {
-            this.rpt = token.rpt;
-          })
-        );
+    const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/authz/entitlement/' + resourceServerId;
+    const headers = new HttpHeaders({'Authorization': 'Bearer ' + this.accessToken});
+    return this.http.get(url, {headers: headers, withCredentials: false})
+      .pipe(
+        tap((token: any) => {
+          this.rpt = token.rpt;
+        })
+      );
   }
 
   public clearToken(initOptions: any) {
@@ -400,7 +409,11 @@ export class KeycloakService {
       redirectUri += (redirectUri.indexOf('?') === -1 ? '?' : '&') + 'prompt=' + options.prompt;
     }
 
-    this.callbackStorage.add({state: state, nonce: nonce, redirectUri: redirectUri});
+    const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
+      state: state,
+      nonce: nonce,
+      redirectUri: redirectUri,
+    };
 
     let action = 'auth';
     if (options && options.action === 'register') {
@@ -439,13 +452,34 @@ export class KeycloakService {
       url += '&ui_locales=' + encodeURIComponent(options.locale);
     }
 
+    if (options && options.acr) {
+      url += '&claims=' + encodeURIComponent(JSON.stringify({
+        id_token: {
+          acr: options.acr
+        }
+      }));
+    }
+
+    let codeVerifier;
+    if ((options && options.pkceMethod) || !!this.initOptions.pkceMethod) {
+      const pkceMethod = !!options.pkceMethod ? options.pkceMethod : this.initOptions.pkceMethod;
+      codeVerifier = Token.generateCodeVerifier(96);
+      callback.pkceCodeVerifier = codeVerifier;
+      const pkceChallenge = Token.generatePkceChallenge(pkceMethod, codeVerifier);
+      url += '&code_challenge=' + pkceChallenge;
+      url += '&code_challenge_method=' + pkceMethod;
+    }
+
+    this.callbackStorage.add(callback);
     return url;
   }
 
   createLogoutUrl(options: any): string {
     const url = this.getRealmUrl()
       + '/protocol/openid-connect/logout'
-      + '?redirect_uri=' + encodeURIComponent(this.adapter.redirectUri(options, false));
+      + '?post_logout_redirect_uri=' + encodeURIComponent(this.adapter.redirectUri(options, false))
+      + '&id_token_hint=' + encodeURIComponent(this.idToken)
+    ;
 
     return url;
   }
@@ -466,7 +500,6 @@ export class KeycloakService {
 
     return url;
   }
-
 
   // ###################################
   // #######     URLs methods     ######
@@ -532,6 +565,12 @@ export class KeycloakService {
         break;
       default:
         // console.log('Invalid value for flow');
+    }
+
+    if (this.initOptions.pkceMethod) {
+      if (this.initOptions.pkceMethod !== 'S256') {
+        throw new Error('Invalid value for pkceMethod');
+      }
     }
 
     // Callback

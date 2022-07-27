@@ -51,7 +51,7 @@ export class KeycloakSilentCheckLoginIframe {
     }
     const oauth = this.keycloak.parseCallback(event.data);
     if (!!oauth) {
-      this.keycloak.processCallback(oauth).subscribe(() => console.log('Silently LOGGED'));
+      this.keycloak.processCallback(oauth).subscribe(() => console.log('Silent login ended'));
     }
     document.body.removeChild(this.iframe);
     window.removeEventListener('message', () => this.processSilentLoginCallbackMessage(event), false);

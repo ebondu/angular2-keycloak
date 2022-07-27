@@ -105,6 +105,8 @@ export interface KeycloakInitOptions {
    * @default standard
    */
   flow?: KeycloakFlow;
+
+  pkceMethod?: string;
 }
 
 export interface KeycloakLoginOptions {

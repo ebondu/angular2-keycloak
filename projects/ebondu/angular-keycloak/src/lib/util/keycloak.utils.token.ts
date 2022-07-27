@@ -18,6 +18,10 @@
 /**
  * Token utility
  */
+
+import { fromByteArray } from 'base64-js';
+import { sha256 } from 'js-sha256';
+
 export class Token {
 
   static decodeToken(str: string): string {
@@ -45,5 +49,52 @@ export class Token {
 
     str = JSON.parse(str);
     return str;
+  }
+
+  static generateRandomData(len) {
+    // use web crypto APIs if possible
+    let array = null;
+    const crypto = window.crypto;
+    if (crypto && crypto.getRandomValues && window.Uint8Array) {
+      array = new Uint8Array(len);
+      crypto.getRandomValues(array);
+      return array;
+    }
+
+    // fallback to Math random
+    array = new Array(len);
+    for (let j = 0; j < array.length; j++) {
+      array[j] = Math.floor(256 * Math.random());
+    }
+    return array;
+  }
+
+  static generateCodeVerifier(len) {
+    return Token.generateRandomString(len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+  }
+
+  static generateRandomString(len, alphabet) {
+    const randomData = this.generateRandomData(len);
+    const chars = new Array(len);
+    for (let i = 0; i < len; i++) {
+      chars[i] = alphabet.charCodeAt(randomData[i] % alphabet.length);
+    }
+    return String.fromCharCode.apply(null, chars);
+  }
+
+  static generatePkceChallenge(pkceMethod, codeVerifier) {
+    switch (pkceMethod) {
+      // The use of the "plain" method is considered insecure and therefore not supported.
+      case 'S256':
+        // hash codeVerifier, then encode as url-safe base64 without padding
+        const hashBytes = new Uint8Array(sha256.arrayBuffer(codeVerifier));
+        const encodedHash = fromByteArray(hashBytes)
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/\=/g, '');
+        return encodedHash;
+      default:
+        throw new Error('Invalid value for pkceMethod');
+    }
   }
 }
