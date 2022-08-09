@@ -36,7 +36,7 @@ import {
   KeycloakResponseMode,
   KeycloakResponseType
 } from '../model/keycloak-config.model';
-import { filter, first, map, switchMap, tap } from 'rxjs/operators';
+import { filter, map, switchMap, tap } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
 import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
@@ -252,44 +252,44 @@ export class KeycloakService {
 
   updateToken(minValidity: number): Observable<string> {
 
-      minValidity = minValidity || 5;
+    minValidity = minValidity || 5;
 
-      if (!this.isTokenExpired(minValidity)) {
-        // console.log('token still valid');
-        return of(this.accessToken);
+    if (!this.isTokenExpired(minValidity)) {
+      // console.log('token still valid');
+      return of(this.accessToken);
+    } else {
+      if (this.isRefreshTokenExpired(5)) {
+        this.login(this.keycloakConfig);
+        return EMPTY;
       } else {
-        if (this.isRefreshTokenExpired(5)) {
-          this.login(this.keycloakConfig);
-          return EMPTY;
+        // console.log('refreshing token');
+        let params: HttpParams = new HttpParams();
+        params = params.set('grant_type', 'refresh_token');
+        params = params.set('refresh_token', this.refreshToken);
+
+        const url = this.getRealmUrl() + '/protocol/openid-connect/token';
+        let headers = new HttpHeaders({'Content-type': 'application/x-www-form-urlencoded'});
+
+        let withCredentials = false;
+        if (this.keycloakConfig.clientId && this.keycloakConfig.clientSecret) {
+          headers = headers.append(
+            'Authorization',
+            'Basic ' + btoa(this.keycloakConfig.clientId + ': ' + this.keycloakConfig.clientSecret));
+          withCredentials = true;
         } else {
-          // console.log('refreshing token');
-          let params: HttpParams = new HttpParams();
-          params = params.set('grant_type', 'refresh_token');
-          params = params.set('refresh_token', this.refreshToken);
-
-          const url = this.getRealmUrl() + '/protocol/openid-connect/token';
-          let headers = new HttpHeaders({'Content-type': 'application/x-www-form-urlencoded'});
-
-          let withCredentials = false;
-          if (this.keycloakConfig.clientId && this.keycloakConfig.clientSecret) {
-            headers = headers.append(
-              'Authorization',
-              'Basic ' + btoa(this.keycloakConfig.clientId + ': ' + this.keycloakConfig.clientSecret));
-            withCredentials = true;
-          } else {
-            params = params.set('client_id', this.keycloakConfig.clientId);
-          }
-
-          let timeLocal = new Date().getTime();
-          this.http.post(url, params, {headers: headers, withCredentials: withCredentials}).subscribe((token: any) => {
-            timeLocal = (timeLocal + new Date().getTime()) / 2;
-
-            this.setToken(token['access_token'], token['refresh_token'], token['id_token'], true);
-
-            this.timeSkew = Math.floor(timeLocal / 1000) - this.tokenParsed.iat;
-            return of(token['access_token']);
-          });
+          params = params.set('client_id', this.keycloakConfig.clientId);
         }
+
+        let timeLocal = new Date().getTime();
+        return this.http.post(url, params, {headers: headers, withCredentials: withCredentials}).pipe(
+          map((token: any) => {
+            timeLocal = (timeLocal + new Date().getTime()) / 2;
+            this.setToken(token['access_token'], token['refresh_token'], token['id_token'], true);
+            this.timeSkew = Math.floor(timeLocal / 1000) - this.tokenParsed.iat;
+            return token['access_token'];
+          })
+        );
+      }
     }
   }
 
