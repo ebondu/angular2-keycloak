@@ -36,7 +36,7 @@ import {
   KeycloakResponseMode,
   KeycloakResponseType
 } from '../model/keycloak-config.model';
-import { filter, map, switchMap, tap } from 'rxjs/operators';
+import { filter, map, mergeMap, switchMap, tap } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
 import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
@@ -306,9 +306,143 @@ export class KeycloakService {
   }
 
   loadUserProfile(): Observable<any> {
-    const url = this.getRealmUrl() + '/account';
-    const headers = new HttpHeaders({'Accept': 'application/json', 'Authorization': 'bearer ' + this.accessToken});
-    return this.http.get(url, {headers: headers});
+    // need to refresh token to get account-console as aud
+    let paramsToSend: HttpParams = new HttpParams();
+    let headersToSend = new HttpHeaders();
+    headersToSend = headersToSend.set('Content-type', 'application/x-www-form-urlencoded');
+    paramsToSend = paramsToSend.set('client_id', this.keycloakConfig.clientId);
+    paramsToSend = paramsToSend.set('grant_type', 'refresh_token');
+    paramsToSend = paramsToSend.set('refresh_token', this.refreshToken);
+    headersToSend = headersToSend.set('Authorization', 'bearer ' + this.accessToken);
+    const url = this.getRealmUrl() + '/account/';
+    return this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: false, headers: headersToSend})
+      .pipe(mergeMap((token: any) => {
+        const headers = new HttpHeaders({'Authorization': 'bearer ' + token.access_token});
+        return this.http.get(url, {headers: headers, withCredentials: false});
+      }));
+  }
+
+  updateUserProfile(profile: any): Observable<any> {
+    // need to refresh token to get account-console as aud
+    let paramsToSend: HttpParams = new HttpParams();
+    let headersToSend = new HttpHeaders();
+    headersToSend = headersToSend.set('Content-type', 'application/x-www-form-urlencoded');
+    paramsToSend = paramsToSend.set('client_id', this.keycloakConfig.clientId);
+    paramsToSend = paramsToSend.set('grant_type', 'refresh_token');
+    paramsToSend = paramsToSend.set('refresh_token', this.refreshToken);
+    headersToSend = headersToSend.set('Authorization', 'bearer ' + this.accessToken);
+    const url = this.getRealmUrl() + '/account/';
+    return this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: true, headers: headersToSend})
+      .pipe(mergeMap((token: any) => {
+        const headers = new HttpHeaders({'Authorization': 'bearer ' + token.access_token});
+        return this.http.post(url, profile, {headers: headers, withCredentials: false});
+      }));
+  }
+
+  createDeleteAccountUrl(options?: any): string {
+      const state = uuidv4();
+      const nonce = uuidv4();
+      // const redirectUri = this.getRealmUrl() + '/account/#/personal-info';
+      const redirectUri = this.adapter.redirectUri({});
+      const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
+        state: state,
+        nonce: nonce,
+        redirectUri: redirectUri
+      };
+
+      const action = 'auth';
+
+      let url = this.getRealmUrl()
+        + '/protocol/openid-connect/' + action
+        + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
+        + '&redirect_uri=' + encodeURIComponent(redirectUri)
+        + '&state=' + encodeURIComponent(state)
+        + '&nonce=' + encodeURIComponent(nonce)
+        + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
+        + '&response_type=' + encodeURIComponent(this.responseType)
+        + '&scope=' + encodeURIComponent('openid')
+        + '&kc_action=' + encodeURIComponent('delete_account');
+
+      let codeVerifier;
+      const pkceMethod = this.initOptions.pkceMethod;
+      codeVerifier = Token.generateCodeVerifier(96);
+      callback.pkceCodeVerifier = codeVerifier;
+      const pkceChallenge = Token.generatePkceChallenge(pkceMethod, codeVerifier);
+      url += '&code_challenge=' + pkceChallenge;
+      url += '&code_challenge_method=' + pkceMethod;
+
+      this.callbackStorage.add(callback);
+      return url;
+  }
+
+  createUpdateProfileUrl(options?: any): string {
+    const state = uuidv4();
+    const nonce = uuidv4();
+    const redirectUri = this.adapter.redirectUri({});
+    const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
+      state: state,
+      nonce: nonce,
+      redirectUri: redirectUri
+    };
+
+    const action = 'auth';
+
+    let url = this.getRealmUrl()
+      + '/protocol/openid-connect/' + action
+      + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
+      + '&redirect_uri=' + encodeURIComponent(redirectUri)
+      + '&state=' + encodeURIComponent(state)
+      + '&nonce=' + encodeURIComponent(nonce)
+      + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
+      + '&response_type=' + encodeURIComponent(this.responseType)
+      + '&scope=' + encodeURIComponent('openid')
+      + '&kc_action=' + encodeURIComponent('UPDATE_PROFILE');
+
+    let codeVerifier;
+    const pkceMethod = this.initOptions.pkceMethod;
+    codeVerifier = Token.generateCodeVerifier(96);
+    callback.pkceCodeVerifier = codeVerifier;
+    const pkceChallenge = Token.generatePkceChallenge(pkceMethod, codeVerifier);
+    url += '&code_challenge=' + pkceChallenge;
+    url += '&code_challenge_method=' + pkceMethod;
+
+    this.callbackStorage.add(callback);
+    return url;
+  }
+
+  changePassword(): string {
+    const state = uuidv4();
+    const nonce = uuidv4();
+    const redirectUri = this.adapter.redirectUri({});
+    const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
+      state: state,
+      nonce: nonce,
+      redirectUri: redirectUri
+    };
+
+    const action = 'auth';
+
+    let url = this.getRealmUrl()
+      + '/protocol/openid-connect/' + action
+      + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
+      + '&redirect_uri=' + encodeURIComponent(redirectUri)
+      + '&state=' + encodeURIComponent(state)
+      + '&nonce=' + encodeURIComponent(nonce)
+      + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
+      + '&response_type=' + encodeURIComponent(this.responseType)
+      + '&scope=' + encodeURIComponent('openid')
+      + '&kc_action=' + encodeURIComponent('UPDATE_PASSWORD');
+
+    let codeVerifier;
+    const pkceMethod = this.initOptions.pkceMethod;
+    codeVerifier = Token.generateCodeVerifier(96);
+    callback.pkceCodeVerifier = codeVerifier;
+    const pkceChallenge = Token.generatePkceChallenge(pkceMethod, codeVerifier);
+    url += '&code_challenge=' + pkceChallenge;
+    url += '&code_challenge_method=' + pkceMethod;
+
+    this.callbackStorage.add(callback);
+    return url;
   }
 
   loadUserInfo(): Observable<any> {
