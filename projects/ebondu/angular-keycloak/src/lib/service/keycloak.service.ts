@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ebondu and/or its affiliates
+ * Copyright 2023 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -130,6 +130,7 @@ export class KeycloakService {
         this.initService();
       }, error => {
         // console.log('Unable to load keycloak.json', error);
+        this.initBS.next(false);
       });
     } else if (keycloakConfig) {
       this.initService();
@@ -138,7 +139,7 @@ export class KeycloakService {
       this.initBS.next(false);
     }
 
-    this.initializedObs.pipe(filter(initialized => initialized)).subscribe(next => {
+    this.initializedObs.pipe(filter(initialized => !!initialized)).subscribe(next => {
       // console.log('Keycloak initialized, initializing authz service', this);
       if (next) {
         const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma2-configuration';
@@ -148,7 +149,7 @@ export class KeycloakService {
           this.initAuthzBS.next(true);
         }, error => {
           // console.log('unable to get uma file', error);
-          this.initAuthzBS.next(true);
+          this.initAuthzBS.next(false);
         });
       }
     });
@@ -184,7 +185,7 @@ export class KeycloakService {
         this.authenticationErrorBS.next(errorData);
         if (prompt !== 'none') {
           // console.log('error while processing callback');
-          observer.next(true);
+          observer.next(false);
         }
         return;
       } else if ((this.initOptions.flow !== KeycloakFlow.STANDARD) && (oauth.access_token || oauth.id_token)) {
@@ -231,7 +232,7 @@ export class KeycloakService {
         }, (errorToken => {
           this.authenticationErrorBS.next({error: errorToken, error_description: 'unable to get token from server'});
           // console.log('Unable to get token', errorToken);
-          observer.next(true);
+          observer.next(false);
         }));
       }
     });
@@ -315,7 +316,7 @@ export class KeycloakService {
     paramsToSend = paramsToSend.set('refresh_token', this.refreshToken);
     headersToSend = headersToSend.set('Authorization', 'bearer ' + this.accessToken);
     const url = this.getRealmUrl() + '/account/';
-    return this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: false, headers: headersToSend})
+    return this.http.post(this.umaConfig?.token_endpoint, paramsToSend, {withCredentials: false, headers: headersToSend})
       .pipe(mergeMap((token: any) => {
         const headers = new HttpHeaders({'Authorization': 'bearer ' + token.access_token});
         return this.http.get(url, {headers: headers, withCredentials: false});
@@ -332,7 +333,7 @@ export class KeycloakService {
     paramsToSend = paramsToSend.set('refresh_token', this.refreshToken);
     headersToSend = headersToSend.set('Authorization', 'bearer ' + this.accessToken);
     const url = this.getRealmUrl() + '/account/';
-    return this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: true, headers: headersToSend})
+    return this.http.post(this.umaConfig?.token_endpoint, paramsToSend, {withCredentials: true, headers: headersToSend})
       .pipe(mergeMap((token: any) => {
         const headers = new HttpHeaders({'Authorization': 'bearer ' + token.access_token});
         return this.http.post(url, profile, {headers: headers, withCredentials: false});
@@ -499,7 +500,7 @@ export class KeycloakService {
    */
   authorize(wwwAuthenticateHeader: string): Observable<boolean> {
     return this.initializedAuthzObs.pipe(
-      filter(initialized => initialized),
+      filter(initialized => !!initialized),
       switchMap(() => {
         return this.processAuthz(wwwAuthenticateHeader);
       })
@@ -779,7 +780,7 @@ export class KeycloakService {
             paramsToSend = paramsToSend.set('client_id', this.keycloakConfig.clientId);
           }
         }
-        this.http.post(this.umaConfig.token_endpoint, paramsToSend, {withCredentials: false, headers: headers}).subscribe(
+        this.http.post(this.umaConfig?.token_endpoint, paramsToSend, {withCredentials: false, headers: headers}).subscribe(
           (token: any) => {
 
             // console.log('Authorization granted by the server.');
@@ -792,10 +793,10 @@ export class KeycloakService {
 
             if (error.status === 403) {
               // console.error('Authorization request was denied by the server.');
-              observer.next(true);
+              observer.next(false);
             } else {
               // console.error('Could not obtain authorization data from server.');
-              observer.next(true);
+              observer.next(false);
             }
           }
         );
