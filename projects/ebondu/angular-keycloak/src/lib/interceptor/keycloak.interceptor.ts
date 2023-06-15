@@ -19,9 +19,9 @@
 import { Injectable, Injector } from '@angular/core';
 import { HttpErrorResponse, HttpEvent, HttpEventType, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { KeycloakService } from '../service/keycloak.service';
-import { catchError, filter, finalize, first, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, filter, finalize, first, switchMap, tap } from 'rxjs/operators';
 
 @Injectable()
 export class KeycloakInterceptor implements HttpInterceptor {
@@ -106,14 +106,14 @@ export class KeycloakInterceptor implements HttpInterceptor {
                             );
                           }));
                       } else {
-                        throwError(error);
+                        return throwError(error);
                       }
                     } else {
                       // console.log('Error while calling endpoint', error);
-                      throwError(error);
+                      return throwError(error);
                     }
                   } else {
-                    throwError(error);
+                    return throwError(error);
                   }
                 }),
                 finalize(() => {
