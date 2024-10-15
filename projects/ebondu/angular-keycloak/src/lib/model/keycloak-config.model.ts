@@ -31,6 +31,8 @@ export enum KeycloakResponseType {CODE = 'code', ID_TOKEN = 'id_token token', CO
 
 export enum KeycloakFlow {STANDARD = 'standard', IMPLICIT = 'implicit', HYBRID = 'hybrid'}
 
+export enum LogoutMethod {POST = 'post', GET = 'get'}
+
 
 export interface KeycloakInitOptions {
 
@@ -107,6 +109,10 @@ export interface KeycloakInitOptions {
   flow?: KeycloakFlow;
 
   pkceMethod?: string;
+
+  logoutMethod?: LogoutMethod;
+
+  scope?: string;
 }
 
 export interface KeycloakLoginOptions {
