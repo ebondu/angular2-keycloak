@@ -38,6 +38,7 @@ export class KeycloakCheck3pCookiesIframe {
   initIframe() {
     this.iframe = document.createElement('iframe');
     this.iframe.setAttribute('src', this.iframeSrc);
+    this.iframe.setAttribute('sandbox', 'allow-storage-access-by-user-activation allow-scripts allow-same-origin');
     this.iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
     this.iframe.style.display = 'none';
     document.body.appendChild(this.iframe);

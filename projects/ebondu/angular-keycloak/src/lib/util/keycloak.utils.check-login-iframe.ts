@@ -35,6 +35,7 @@ export class KeycloakCheckLoginIframe {
   initIframe() {
     this.iframe = document.createElement('iframe');
     this.iframe.setAttribute('src', this.iframeSrc);
+    this.iframe.setAttribute('sandbox', 'allow-storage-access-by-user-activation allow-scripts allow-same-origin');
     this.iframe.style.display = 'none';
     this.iframe.setAttribute('title', 'keycloak-session-iframe');
     document.body.appendChild(this.iframe);

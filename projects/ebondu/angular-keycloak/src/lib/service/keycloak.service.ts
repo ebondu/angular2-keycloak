@@ -115,6 +115,10 @@ export class KeycloakService {
     this.authenticationErrorObs = this.authenticationErrorBS.asObservable();
     // console.log('Keycloak service created with init options and configuration file', initOptions, configUrl);
 
+    if (!globalThis.isSecureContext) {
+      console.warn('Keycloak JS must be used in a \'secure context\' to function properly as it relies on browser APIs that are otherwise not available');
+    }
+
     if (!isPlatformBrowser(platformId)) {
       // console.log('Keycloak service init only available on browser platform');
       this.initBS.next(false);
@@ -342,7 +346,7 @@ export class KeycloakService {
 
   createDeleteAccountUrl(options?: any): string {
       const state = uuidv4();
-      const nonce = uuidv4();
+      const nonce = this.initOptions.useNonce ? uuidv4() : null;
       // const redirectUri = this.getRealmUrl() + '/account/#/personal-info';
       const redirectUri = this.adapter.redirectUri({});
       const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
@@ -358,11 +362,14 @@ export class KeycloakService {
         + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
         + '&redirect_uri=' + encodeURIComponent(redirectUri)
         + '&state=' + encodeURIComponent(state)
-        + '&nonce=' + encodeURIComponent(nonce)
         + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
         + '&response_type=' + encodeURIComponent(this.responseType)
         + '&scope=' + encodeURIComponent('openid')
         + '&kc_action=' + encodeURIComponent('delete_account');
+
+      if (options.useNonce) {
+        url += '&nonce=' + encodeURIComponent(nonce);
+      }
 
       let codeVerifier;
       const pkceMethod = this.initOptions.pkceMethod;
@@ -378,7 +385,7 @@ export class KeycloakService {
 
   createUpdateProfileUrl(options?: any): string {
     const state = uuidv4();
-    const nonce = uuidv4();
+    const nonce = this.initOptions.useNonce ? uuidv4() : null;
     const redirectUri = this.adapter.redirectUri({});
     const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
       state: state,
@@ -393,11 +400,14 @@ export class KeycloakService {
       + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
       + '&redirect_uri=' + encodeURIComponent(redirectUri)
       + '&state=' + encodeURIComponent(state)
-      + '&nonce=' + encodeURIComponent(nonce)
       + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
       + '&response_type=' + encodeURIComponent(this.responseType)
       + '&scope=' + encodeURIComponent('openid')
       + '&kc_action=' + encodeURIComponent('UPDATE_PROFILE');
+
+    if (options.useNonce) {
+      url += '&nonce=' + encodeURIComponent(nonce);
+    }
 
     let codeVerifier;
     const pkceMethod = this.initOptions.pkceMethod;
@@ -413,7 +423,7 @@ export class KeycloakService {
 
   changePassword(): string {
     const state = uuidv4();
-    const nonce = uuidv4();
+    const nonce = this.initOptions.useNonce ? uuidv4() : null;
     const redirectUri = this.adapter.redirectUri({});
     const callback: {state, nonce, redirectUri, pkceCodeVerifier? } = {
       state: state,
@@ -428,11 +438,14 @@ export class KeycloakService {
       + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
       + '&redirect_uri=' + encodeURIComponent(redirectUri)
       + '&state=' + encodeURIComponent(state)
-      + '&nonce=' + encodeURIComponent(nonce)
       + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
       + '&response_type=' + encodeURIComponent(this.responseType)
       + '&scope=' + encodeURIComponent('openid')
       + '&kc_action=' + encodeURIComponent('UPDATE_PASSWORD');
+
+    if (this.initOptions.useNonce) {
+      url += '&nonce=' + encodeURIComponent(nonce);
+    }
 
     let codeVerifier;
     const pkceMethod = this.initOptions.pkceMethod;
@@ -537,7 +550,7 @@ export class KeycloakService {
 
   createLoginUrl(options: any): string {
     const state = uuidv4();
-    const nonce = uuidv4();
+    const nonce = this.initOptions.useNonce ? uuidv4() : null;
 
     let redirectUri = this.adapter.redirectUri(options);
     if (options && options.prompt) {
@@ -562,10 +575,13 @@ export class KeycloakService {
       + '?client_id=' + encodeURIComponent(this.keycloakConfig.clientId)
       + '&redirect_uri=' + encodeURIComponent(redirectUri)
       + '&state=' + encodeURIComponent(state)
-      + '&nonce=' + encodeURIComponent(nonce)
       + '&response_mode=' + encodeURIComponent(this.initOptions.responseMode)
       + '&response_type=' + encodeURIComponent(this.responseType)
       + '&scope=' + encodeURIComponent(scope);
+
+    if (options.useNonce) {
+      url += '&nonce=' + encodeURIComponent(nonce);
+    }
 
     if (options && options.prompt) {
       url += '&prompt=' + encodeURIComponent(options.prompt);
@@ -823,9 +839,9 @@ export class KeycloakService {
     const passedTimeLocal = (timeLocal + new Date().getTime()) / 2;
     this.setToken(accessToken, refreshToken, idToken, true);
 
-    if ((this.tokenParsed && this.tokenParsed.nonce !== oauth.storedNonce) ||
+    if (this.initOptions.useNonce && ((this.tokenParsed && this.tokenParsed.nonce !== oauth.storedNonce) ||
       (this.refreshTokenParsed && this.refreshTokenParsed.nonce !== oauth.storedNonce) ||
-      (this.idTokenParsed && this.idTokenParsed.nonce !== oauth.storedNonce)) {
+      (this.idTokenParsed && this.idTokenParsed.nonce !== oauth.storedNonce))) {
       this.authenticationErrorBS.next({error: 'invalid_nonce', error_description: 'the provided nonce does not match stored nonce'});
       this.clearToken({});
     } else {
