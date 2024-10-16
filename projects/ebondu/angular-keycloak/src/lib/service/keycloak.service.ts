@@ -319,10 +319,11 @@ export class KeycloakService {
     paramsToSend = paramsToSend.set('grant_type', 'refresh_token');
     paramsToSend = paramsToSend.set('refresh_token', this.refreshToken);
     headersToSend = headersToSend.set('Authorization', 'bearer ' + this.accessToken);
-    const url = this.getRealmUrl() + '/account/';
+    const url = this.getRealmUrl() + '/account?userProfileMetadata=true';
     return this.http.post(this.umaConfig?.token_endpoint, paramsToSend, {withCredentials: false, headers: headersToSend})
       .pipe(mergeMap((token: any) => {
         const headers = new HttpHeaders({'Authorization': 'bearer ' + token.access_token});
+        headers.set('Accept', 'application/json');
         return this.http.get(url, {headers: headers, withCredentials: false});
       }));
   }
@@ -511,7 +512,7 @@ export class KeycloakService {
    * necessary information to ask a Keycloak server for authorization data using both UMA and Entitlement protocol,
    * depending on how the policy enforcer at the resource server was configured.
    */
-  authorize(wwwAuthenticateHeader: string): Observable<boolean> {
+  authorize(wwwAuthenticateHeader: string): Observable<string> {
     return this.initializedAuthzObs.pipe(
       filter(initialized => !!initialized),
       switchMap(() => {
@@ -773,8 +774,8 @@ export class KeycloakService {
     }
   }
 
-  private processAuthz(wwwAuthenticateHeader: string): Observable<boolean> {
-    return new Observable<boolean>((observer: any) => {
+  private processAuthz(wwwAuthenticateHeader: string): Observable<string> {
+    return new Observable<string>((observer: any) => {
       if (wwwAuthenticateHeader.indexOf('UMA') !== -1) {
         const params = wwwAuthenticateHeader.split(',');
 
@@ -801,18 +802,18 @@ export class KeycloakService {
 
             // console.log('Authorization granted by the server.');
             // Token retrieved
-            this.accessToken = token.access_token;
-            this.refreshToken = token.refresh_token;
-            observer.next(true);
+            // this.accessToken = token.access_token;
+            // this.refreshToken = token.refresh_token;
+            observer.next(token.access_token);
 
           }, error => {
 
             if (error.status === 403) {
               // console.error('Authorization request was denied by the server.');
-              observer.next(false);
+              observer.next('');
             } else {
               // console.error('Could not obtain authorization data from server.');
-              observer.next(false);
+              observer.next('');
             }
           }
         );

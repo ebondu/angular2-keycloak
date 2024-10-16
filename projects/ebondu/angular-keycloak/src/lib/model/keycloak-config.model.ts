@@ -34,8 +34,6 @@ export enum KeycloakFlow {STANDARD = 'standard', IMPLICIT = 'implicit', HYBRID =
 
 export interface KeycloakInitOptions {
 
-  useNonce?: boolean;
-
   /**
    * Allows to use different adapter:
    *
@@ -107,6 +105,8 @@ export interface KeycloakInitOptions {
   flow?: KeycloakFlow;
 
   pkceMethod?: string;
+
+  useNonce?: boolean;
 }
 
 export interface KeycloakLoginOptions {
