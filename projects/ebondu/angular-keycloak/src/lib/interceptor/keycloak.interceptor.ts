@@ -78,7 +78,9 @@ export class KeycloakInterceptor implements HttpInterceptor {
                       if (error.headers.has('WWW-Authenticate')) {
                         // console.log('using www-authenticate hearder');
                         return this.keycloak.authorize(error.headers.get('WWW-Authenticate'))
-                          .pipe(switchMap((authorizedToken: string) => {
+                          .pipe(
+                            filter(authorizedToken => !!authorizedToken),
+                            switchMap((authorizedToken: string) => {
                             // console.log('Using token from service after authz');
                             const authReqWithRpt = req.clone({
                               headers: req.headers

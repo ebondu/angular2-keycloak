@@ -115,48 +115,50 @@ export class KeycloakService {
     this.authenticationErrorObs = this.authenticationErrorBS.asObservable();
     // console.log('Keycloak service created with init options and configuration file', initOptions, configUrl);
 
-    if (!globalThis.isSecureContext) {
-      console.warn('Keycloak JS must be used in a \'secure context\' to function properly as it relies on browser APIs that are otherwise not available');
-    }
-
     if (!isPlatformBrowser(platformId)) {
       // console.log('Keycloak service init only available on browser platform');
       this.initBS.next(false);
-    } else if (this.configUrl) {
-      this.http.get(this.configUrl).subscribe(config => {
-        this.keycloakConfig = {
-          authServerUrl: config['auth-server-url'],
-          realm: config['realm'],
-          clientId: config['resource'],
-          clientSecret: (config['credentials'] || {})['secret']
-        };
-        // console.log('Conf loaded', this.keycloakConfig);
-        this.initService();
-      }, error => {
-        // console.log('Unable to load keycloak.json', error);
-        this.initBS.next(false);
-      });
-    } else if (keycloakConfig) {
-      this.initService();
     } else {
-      // console.log('Keycloak service init fails : no keycloak.json or configuration provided');
-      this.initBS.next(false);
-    }
-
-    this.initializedObs.pipe(filter(initialized => !!initialized)).subscribe(next => {
-      // console.log('Keycloak initialized, initializing authz service', this);
-      if (next) {
-        const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma2-configuration';
-        this.http.get(url).subscribe(authz => {
-          // console.log('Authz configuration file loaded, continuing authz');
-          this.umaConfig = authz;
-          this.initAuthzBS.next(true);
-        }, error => {
-          // console.log('unable to get uma file', error);
-          this.initAuthzBS.next(false);
-        });
+      if (!globalThis.isSecureContext) {
+        console.warn('Keycloak JS must be used in a \'secure context\' to function properly as it relies on browser APIs that are otherwise not available');
       }
-    });
+
+      if (this.configUrl) {
+        this.http.get(this.configUrl).subscribe(config => {
+          this.keycloakConfig = {
+            authServerUrl: config['auth-server-url'],
+            realm: config['realm'],
+            clientId: config['resource'],
+            clientSecret: (config['credentials'] || {})['secret']
+          };
+          // console.log('Conf loaded', this.keycloakConfig);
+          this.initService();
+        }, error => {
+          // console.log('Unable to load keycloak.json', error);
+          this.initBS.next(false);
+        });
+      } else if (keycloakConfig) {
+        this.initService();
+      } else {
+        // console.log('Keycloak service init fails : no keycloak.json or configuration provided');
+        this.initBS.next(false);
+      }
+
+      this.initializedObs.pipe(filter(initialized => !!initialized)).subscribe(next => {
+        // console.log('Keycloak initialized, initializing authz service', this);
+        if (next) {
+          const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma2-configuration';
+          this.http.get(url).subscribe(authz => {
+            // console.log('Authz configuration file loaded, continuing authz');
+            this.umaConfig = authz;
+            this.initAuthzBS.next(true);
+          }, error => {
+            // console.log('unable to get uma file', error);
+            this.initAuthzBS.next(false);
+          });
+        }
+      });
+    }
   }
 
   public parseCallback(url: string): any {
