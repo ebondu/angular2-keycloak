@@ -29,7 +29,7 @@ npm install -g @angular/cli
 To generate all `*.js`, `*.js.map` and `*.d.ts` files:
 
 ```bash
-$ ng build @ebondu/angular-keycloak --prod
+$ ng build @ebondu/angular-keycloak --configuration=production
 ```
 
 All distribution files are located in ```dist/ebondu/angular2-keycloak```
@@ -41,7 +41,7 @@ All distribution files are located in ```dist/ebondu/angular2-keycloak```
 Declare Keycloak configuration / interceptor in angular app :
 
 ```javascript
-import { KEYCLOAK_CONF, KEYCLOAK_INIT_OPTIONS, KeycloakInterceptor } from '@ebondu/angular-keycloak';
+import { KEYCLOAK_CONF, KEYCLOAK_INIT_OPTIONS, keycloakInterceptor } from '@ebondu/angular-keycloak';
 
 @NgModule({
   declarations: [
@@ -60,11 +60,9 @@ import { KEYCLOAK_CONF, KEYCLOAK_INIT_OPTIONS, KeycloakInterceptor } from '@ebon
        provide: KEYCLOAK_CONF,
        useValue: keycloakConfig
      },
-     {
-       provide: HTTP_INTERCEPTORS,
-       useClass: KeycloakInterceptor,
-       multi: true,
-     },
+    provideHttpClient(
+      withInterceptors([keycloakInterceptor])
+    ),
      ...
   ],
   bootstrap: [AppComponent]

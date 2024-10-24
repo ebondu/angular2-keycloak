@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 ebondu and/or its affiliates
+ * Copyright 2024 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Inject, Injectable, Injector, Optional, PLATFORM_ID } from '@angular/core';
+import { inject, Injectable, Injector, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, EMPTY, Observable, of } from 'rxjs';
 
@@ -29,9 +29,7 @@ import {
   KEYCLOAK_INIT_OPTIONS,
   KEYCLOAK_JSON_PATH,
   KeycloakAdapterName,
-  KeycloakConfiguration,
   KeycloakFlow,
-  KeycloakInitOptions,
   KeycloakOnLoad,
   KeycloakResponseMode,
   KeycloakResponseType
@@ -89,15 +87,17 @@ export class KeycloakService {
   private resourceAccess;
   private loginIframe: KeycloakCheckLoginIframe;
 
-  get http() {
-    return this.injector.get(HttpClient);
+  readonly #injector = inject(Injector);
+  readonly #platformId = inject(PLATFORM_ID);
+  readonly #configUrl = inject(KEYCLOAK_JSON_PATH, {optional: true});
+  public keycloakConfig = inject(KEYCLOAK_CONF, {optional: true});
+  public readonly initOptions = inject(KEYCLOAK_INIT_OPTIONS);
+
+  get http(): HttpClient {
+    return this.#injector.get(HttpClient);
   }
 
-  constructor(private injector: Injector,
-              @Optional() @Inject(KEYCLOAK_JSON_PATH) private configUrl: string,
-              @Optional() @Inject(KEYCLOAK_CONF) public keycloakConfig: KeycloakConfiguration,
-              @Inject(KEYCLOAK_INIT_OPTIONS) public initOptions: KeycloakInitOptions,
-              @Inject(PLATFORM_ID) private platformId) {
+  constructor() {
 
     this.initBS = new BehaviorSubject(false);
     this.initializedObs = this.initBS.asObservable();
@@ -115,48 +115,55 @@ export class KeycloakService {
     this.authenticationErrorObs = this.authenticationErrorBS.asObservable();
     // console.log('Keycloak service created with init options and configuration file', initOptions, configUrl);
 
-    if (!globalThis.isSecureContext) {
-      console.warn('Keycloak JS must be used in a \'secure context\' to function properly as it relies on browser APIs that are otherwise not available');
-    }
-
-    if (!isPlatformBrowser(platformId)) {
+    if (!isPlatformBrowser(this.#platformId)) {
       // console.log('Keycloak service init only available on browser platform');
       this.initBS.next(false);
-    } else if (this.configUrl) {
-      this.http.get(this.configUrl).subscribe(config => {
-        this.keycloakConfig = {
-          authServerUrl: config['auth-server-url'],
-          realm: config['realm'],
-          clientId: config['resource'],
-          clientSecret: (config['credentials'] || {})['secret']
-        };
-        // console.log('Conf loaded', this.keycloakConfig);
-        this.initService();
-      }, error => {
-        // console.log('Unable to load keycloak.json', error);
-        this.initBS.next(false);
-      });
-    } else if (keycloakConfig) {
-      this.initService();
     } else {
-      // console.log('Keycloak service init fails : no keycloak.json or configuration provided');
-      this.initBS.next(false);
-    }
-
-    this.initializedObs.pipe(filter(initialized => !!initialized)).subscribe(next => {
-      // console.log('Keycloak initialized, initializing authz service', this);
-      if (next) {
-        const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma2-configuration';
-        this.http.get(url).subscribe(authz => {
-          // console.log('Authz configuration file loaded, continuing authz');
-          this.umaConfig = authz;
-          this.initAuthzBS.next(true);
-        }, error => {
-          // console.log('unable to get uma file', error);
-          this.initAuthzBS.next(false);
-        });
+      if (!globalThis.isSecureContext) {
+        console.warn('Keycloak JS must be used in a \'secure context\' to function properly as it relies on browser APIs that are otherwise not available');
       }
-    });
+      if (this.#configUrl) {
+        this.http.get(this.#configUrl).subscribe({
+          next: (config) => {
+            this.keycloakConfig = {
+              authServerUrl: config['auth-server-url'],
+              realm: config['realm'],
+              clientId: config['resource'],
+              clientSecret: (config['credentials'] || {})['secret']
+            };
+            // console.log('Conf loaded', this.keycloakConfig);
+            this.initService();
+          },
+          error: () => {
+            // console.log('Unable to load keycloak.json', error);
+            this.initBS.next(false);
+          }
+        });
+      } else if (this.keycloakConfig) {
+        this.initService();
+      } else {
+        // console.log('Keycloak service init fails : no keycloak.json or configuration provided');
+        this.initBS.next(false);
+      }
+
+      this.initializedObs.pipe(filter(initialized => !!initialized)).subscribe(next => {
+        // console.log('Keycloak initialized, initializing authz service', this);
+        if (next) {
+          const url = this.keycloakConfig.authServerUrl + '/realms/' + this.keycloakConfig.realm + '/.well-known/uma2-configuration';
+          this.http.get(url).subscribe({
+            next: (authz) => {
+              // console.log('Authz configuration file loaded, continuing authz');
+              this.umaConfig = authz;
+              this.initAuthzBS.next(true);
+            },
+            error: () => {
+              // console.log('unable to get uma file', error);
+              this.initAuthzBS.next(false);
+            }
+          });
+        }
+      });
+    }
   }
 
   public parseCallback(url: string): any {
@@ -221,23 +228,24 @@ export class KeycloakService {
         }
 
         const options = {headers: headers, withCredentials: withCredentials};
-        const body = null;
-        this.http.post(url, params, options).subscribe(token => {
-
-          this.authSuccess(
-            token['access_token'],
-            token['refresh_token'],
-            token['id_token'],
-            this.initOptions.flow === KeycloakFlow.STANDARD,
-            timeLocal,
-            oauth);
-          this.authenticationsBS.next(true);
-          observer.next(true);
-        }, (errorToken => {
-          this.authenticationErrorBS.next({error: errorToken, error_description: 'unable to get token from server'});
-          // console.log('Unable to get token', errorToken);
-          observer.next(false);
-        }));
+        this.http.post(url, params, options).subscribe({
+          next: (token) => {
+            this.authSuccess(
+              token['access_token'],
+              token['refresh_token'],
+              token['id_token'],
+              this.initOptions.flow === KeycloakFlow.STANDARD,
+              timeLocal,
+              oauth);
+            this.authenticationsBS.next(true);
+            observer.next(true);
+          },
+          error: (errorToken) => {
+            this.authenticationErrorBS.next({error: errorToken, error_description: 'unable to get token from server'});
+            // console.log('Unable to get token', errorToken);
+            observer.next(false);
+          }
+        });
       }
     });
   }
@@ -896,14 +904,4 @@ export class KeycloakService {
       delete this.idTokenParsed;
     }
   }
-
-  // getProtectedResource(resourceSet: string): Observable<any> {
-  //   let headers = new HttpHeaders();
-  //   // headers = headers.set('Authorization', 'Bearer ' + this.accessToken);
-  //   // headers = headers.set('Content-type', 'text/plain');
-  //   // headers = headers.set('Accept', '*/*');
-  //   return this.http.get(
-  //     `${this.keycloakConfig.authServerUrl}/realms/${this.keycloakConfig.realm}/authz/protection/resource_set/${resourceSet}`,
-  //     {withCredentials: true});
-  // }
 }

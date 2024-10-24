@@ -11,7 +11,7 @@
   },
   "keywords": [
     "angular",
-    "angular14",
+    "angular18",
     "Keycloak",
     "typescript"
   ],
@@ -20,14 +20,14 @@
     "url": "https://github.com/ebondu/angular2-keycloak.git/issues"
   },
   "dependencies": {
-    "tslib": "^2.7.0"
+    "tslib": "2.7.0"
   },
   "peerDependencies": {
-    "@angular/common": "^18.2.8",
-    "@angular/core": "^18.2.8",
+    "@angular/common": "^18.2.9 || ^19.0.0",
+    "@angular/core": "^18.2.9 || ^19.0.0",
     "uuid": "^10.0.0",
     "js-sha256": "^0.11.0",
-    "rxjs": "^7.4.0",
+    "rxjs": "^7.8.1",
     "base64-js": "^1.5.1"
   }
 }

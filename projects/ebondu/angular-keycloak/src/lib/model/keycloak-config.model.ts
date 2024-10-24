@@ -17,9 +17,9 @@
 
 import { InjectionToken } from '@angular/core';
 
-export const KEYCLOAK_JSON_PATH = new InjectionToken('keycloakJsonPath');
-export const KEYCLOAK_INIT_OPTIONS = new InjectionToken('keycloakOptions');
-export const KEYCLOAK_CONF = new InjectionToken('keycloakConfiguration');
+export const KEYCLOAK_JSON_PATH = new InjectionToken<string>('keycloakJsonPath');
+export const KEYCLOAK_INIT_OPTIONS = new InjectionToken<KeycloakInitOptions>('keycloakOptions');
+export const KEYCLOAK_CONF = new InjectionToken<KeycloakConfiguration>('keycloakConfiguration');
 
 export enum KeycloakAdapterName {CORDOVA = 'cordova', DEFAULT = 'default', ANY = 'any'}
 
