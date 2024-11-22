@@ -92,7 +92,7 @@ export const keycloakInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>
                             catchError((err: any) => {
                               errorWithRptToken = err;
                               // console.log('error response', err);
-                              return throwError(() => error);
+                              return throwError(() => err);
                             }),
                             finalize(() => {
                               if (lastResponseWithRptToken.type === HttpEventType.Sent && !errorWithRptToken) {
