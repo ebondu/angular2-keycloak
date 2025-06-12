@@ -883,11 +883,7 @@ export class KeycloakService {
       // Run the timeout outside Angular Zone. (To prevent unstable application issue NG0506).
       // Then update the observable inside Angular Zone (otherwise observable change is not detected)
       this.#ngZone.runOutsideAngular(() => {
-        this.tokenTimeoutHandle = setTimeout(() => {
-          this.#ngZone.run(
-            () => this.tokenExpiredBS.next(true), expiresIn * 1000
-          );
-        });
+        this.tokenTimeoutHandle = setTimeout(() => this.#ngZone.run(() => this.tokenExpiredBS.next(true)), expiresIn * 1000);
       });
     } else {
       delete this.accessToken;
