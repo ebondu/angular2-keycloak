@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { inject, Injectable, Injector, PLATFORM_ID } from '@angular/core';
+import { inject, Injectable, Injector, NgZone, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, EMPTY, Observable, of } from 'rxjs';
 
@@ -89,6 +89,7 @@ export class KeycloakService {
 
   readonly #injector = inject(Injector);
   readonly #platformId = inject(PLATFORM_ID);
+  readonly #ngZone = inject(NgZone);
   readonly #configUrl = inject(KEYCLOAK_JSON_PATH, {optional: true});
   public keycloakConfig = inject(KEYCLOAK_CONF, {optional: true});
   public readonly initOptions = inject(KEYCLOAK_INIT_OPTIONS);
@@ -879,7 +880,15 @@ export class KeycloakService {
       const start = useTokenTime ? this.tokenParsed.iat : (new Date().getTime() / 1000);
       const expiresIn = this.tokenParsed.exp - start;
       this.tokenExpiredBS.next(false);
-      this.tokenTimeoutHandle = setTimeout(() => this.tokenExpiredBS.next(true), expiresIn * 1000);
+      // Run the timeout outside Angular Zone. (To prevent unstable application issue NG0506).
+      // Then update the observable inside Angular Zone (otherwise observable change is not detected)
+      this.#ngZone.runOutsideAngular(() => {
+        this.tokenTimeoutHandle = setTimeout(() => {
+          this.#ngZone.run(
+            () => this.tokenExpiredBS.next(true), expiresIn * 1000
+          );
+        });
+      });
     } else {
       delete this.accessToken;
       delete this.tokenParsed;
