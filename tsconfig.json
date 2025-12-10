@@ -2,8 +2,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": "./",
-    "downlevelIteration": true,
     "importHelpers": true,
+    "esModuleInterop": true,
     "module": "ES2022",
     "outDir": "./dist/out-tsc",
     "sourceMap": true,

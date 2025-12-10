@@ -11,19 +11,19 @@
       "schematics": {},
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/ng-keycloak",
-            "index": "",
-            "main": "",
+            "outputPath": {
+              "base": "dist/ng-keycloak"
+            },
+            "index": false,
             "tsConfig": "src/tsconfig.json",
             "scripts": [],
-            "vendorChunk": true,
             "extractLicenses": false,
-            "buildOptimizer": false,
             "sourceMap": true,
             "optimization": false,
-            "namedChunks": true
+            "namedChunks": true,
+            "browser": ""
           },
           "configurations": {
             "production": {
@@ -37,9 +37,7 @@
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true
+              "extractLicenses": true
             }
           },
           "defaultConfiguration": ""
@@ -47,18 +45,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "ng-keycloak:build"
+            "buildTarget": "ng-keycloak:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "ng-keycloak:build:production"
+              "buildTarget": "ng-keycloak:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "ng-keycloak:build"
+            "buildTarget": "ng-keycloak:build"
           }
         },
         "test": {
@@ -117,12 +115,15 @@
       "schematics": {},
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/angular6-example-app",
+            "outputPath": {
+              "base": "dist/angular6-example-app"
+            },
             "index": "projects/angular6-example-app/src/index.html",
-            "main": "projects/angular6-example-app/src/main.ts",
-            "polyfills": "projects/angular6-example-app/src/polyfills.ts",
+            "polyfills": [
+              "projects/angular6-example-app/src/polyfills.ts"
+            ],
             "tsConfig": "projects/angular6-example-app/tsconfig.app.json",
             "assets": [
               "projects/angular6-example-app/src/favicon.ico",
@@ -132,12 +133,11 @@
               "projects/angular6-example-app/src/styles.css"
             ],
             "scripts": [],
-            "vendorChunk": true,
             "extractLicenses": false,
-            "buildOptimizer": false,
             "sourceMap": true,
             "optimization": false,
-            "namedChunks": true
+            "namedChunks": true,
+            "browser": "projects/angular6-example-app/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -157,9 +157,7 @@
               "outputHashing": "all",
               "sourceMap": false,
               "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true
+              "extractLicenses": true
             }
           },
           "defaultConfiguration": ""
@@ -167,18 +165,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "angular6-example-app:build"
+            "buildTarget": "angular6-example-app:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "angular6-example-app:build:production"
+              "buildTarget": "angular6-example-app:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "angular6-example-app:build"
+            "buildTarget": "angular6-example-app:build"
           }
         },
         "test": {
