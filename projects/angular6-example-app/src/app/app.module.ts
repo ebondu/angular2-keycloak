@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
-import { KEYCLOAK_CONF, KEYCLOAK_INIT_OPTIONS, KeycloakInterceptor } from '@ebondu/angular-keycloak';
+import { KEYCLOAK_CONF, KEYCLOAK_INIT_OPTIONS, keycloakInterceptor } from '@ebondu/angular-keycloak';
 import { keycloakConfig, keycloakInitOption } from '../environments/environment';
 
 @NgModule({
@@ -26,7 +26,7 @@ import { keycloakConfig, keycloakInitOption } from '../environments/environment'
     },
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: KeycloakInterceptor,
+      useValue: keycloakInterceptor,
       multi: true,
     },
   ],

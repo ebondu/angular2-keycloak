@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 ebondu and/or its affiliates
+ * Copyright 2026 ebondu and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { inject, Injectable, Injector, NgZone, PLATFORM_ID } from '@angular/core';
+import { inject, Injectable, Injector, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, EMPTY, Observable, of } from 'rxjs';
 
@@ -37,7 +37,6 @@ import {
 import { filter, map, mergeMap, switchMap, tap } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
-import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
 import { KeycloakSilentCheckLoginIframe } from '../util/keycloak.utils.silent-check-login-iframe';
 import { KeycloakCheck3pCookiesIframe } from '../util/keycloak.utils.check-3pCookies-iframe';
 import { isPlatformBrowser } from '@angular/common';
@@ -72,7 +71,6 @@ export class KeycloakService {
   private authenticationErrorBS: BehaviorSubject<any>;
   private refreshToken: string;
   private refreshTokenParsed: any;
-  private rpt: string;
   private idToken: string;
   private idTokenParsed: any;
   // keycloak conf
@@ -85,11 +83,9 @@ export class KeycloakService {
   private subject: any;
   private realmAccess;
   private resourceAccess;
-  private loginIframe: KeycloakCheckLoginIframe;
 
   readonly #injector = inject(Injector);
   readonly #platformId = inject(PLATFORM_ID);
-  readonly #ngZone = inject(NgZone);
   readonly #configUrl = inject(KEYCLOAK_JSON_PATH, {optional: true});
   public keycloakConfig = inject(KEYCLOAK_CONF, {optional: true});
   public readonly initOptions = inject(KEYCLOAK_INIT_OPTIONS);
@@ -791,7 +787,6 @@ export class KeycloakService {
         let headers = new HttpHeaders();
         headers = headers.set('Content-type', 'application/x-www-form-urlencoded');
 
-        const formData: FormData = new FormData();
         for (let i = 0; i < params.length; i++) {
           const param = params[i].split('=');
 
@@ -880,11 +875,7 @@ export class KeycloakService {
       const start = useTokenTime ? this.tokenParsed.iat : (new Date().getTime() / 1000);
       const expiresIn = this.tokenParsed.exp - start;
       this.tokenExpiredBS.next(false);
-      // Run the timeout outside Angular Zone. (To prevent unstable application issue NG0506).
-      // Then update the observable inside Angular Zone (otherwise observable change is not detected)
-      this.#ngZone.runOutsideAngular(() => {
-        this.tokenTimeoutHandle = setTimeout(() => this.#ngZone.run(() => this.tokenExpiredBS.next(true)), expiresIn * 1000);
-      });
+      this.tokenTimeoutHandle = setTimeout(() => this.tokenExpiredBS.next(true), expiresIn * 1000);
     } else {
       delete this.accessToken;
       delete this.tokenParsed;
