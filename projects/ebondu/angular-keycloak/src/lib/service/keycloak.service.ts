@@ -37,6 +37,7 @@ import {
 import { filter, map, mergeMap, switchMap, tap } from 'rxjs/operators';
 import { CordovaAdapter } from '../adapter/keycloak.adapter.cordova';
 import { CookieStorage } from '../storage/keycloak.storage.cookie';
+import { KeycloakCheckLoginIframe } from '../util/keycloak.utils.check-login-iframe';
 import { KeycloakSilentCheckLoginIframe } from '../util/keycloak.utils.silent-check-login-iframe';
 import { KeycloakCheck3pCookiesIframe } from '../util/keycloak.utils.check-3pCookies-iframe';
 import { isPlatformBrowser } from '@angular/common';
@@ -71,6 +72,7 @@ export class KeycloakService {
   private authenticationErrorBS: BehaviorSubject<any>;
   private refreshToken: string;
   private refreshTokenParsed: any;
+  private rpt: string;
   private idToken: string;
   private idTokenParsed: any;
   // keycloak conf
@@ -83,6 +85,7 @@ export class KeycloakService {
   private subject: any;
   private realmAccess;
   private resourceAccess;
+  private loginIframe: KeycloakCheckLoginIframe;
 
   readonly #injector = inject(Injector);
   readonly #platformId = inject(PLATFORM_ID);
@@ -787,6 +790,7 @@ export class KeycloakService {
         let headers = new HttpHeaders();
         headers = headers.set('Content-type', 'application/x-www-form-urlencoded');
 
+        const formData: FormData = new FormData();
         for (let i = 0; i < params.length; i++) {
           const param = params[i].split('=');
 
