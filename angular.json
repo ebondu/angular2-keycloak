@@ -17,13 +17,13 @@
               "base": "dist/ng-keycloak"
             },
             "index": false,
-            "tsConfig": "src/tsconfig.json",
+            "tsConfig": "projects/angular6-example-app/tsconfig.app.json",
             "scripts": [],
             "extractLicenses": false,
             "sourceMap": true,
             "optimization": false,
             "namedChunks": true,
-            "browser": ""
+            "browser": "projects/angular6-example-app/src/main.ts"
           },
           "configurations": {
             "production": {
@@ -63,7 +63,6 @@
           "builder": "@angular/build:karma",
           "options": {
             "main": "src/test.ts",
-            "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.spec.json",
             "karmaConfig": "src/karma.conf.js",
             "styles": [
@@ -121,9 +120,6 @@
               "base": "dist/angular6-example-app"
             },
             "index": "projects/angular6-example-app/src/index.html",
-            "polyfills": [
-              "projects/angular6-example-app/src/polyfills.ts"
-            ],
             "tsConfig": "projects/angular6-example-app/tsconfig.app.json",
             "assets": [
               "projects/angular6-example-app/src/favicon.ico",
@@ -183,7 +179,6 @@
           "builder": "@angular/build:karma",
           "options": {
             "main": "projects/angular6-example-app/src/test.ts",
-            "polyfills": "projects/angular6-example-app/src/polyfills.ts",
             "tsConfig": "projects/angular6-example-app/tsconfig.spec.json",
             "karmaConfig": "projects/angular6-example-app/karma.conf.js",
             "styles": [

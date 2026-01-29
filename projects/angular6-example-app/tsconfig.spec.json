@@ -5,11 +5,13 @@
     "types": [
       "jasmine",
       "node"
-    ]
+    ],
+    "paths": {
+      "@ebondu/angular-keycloak": ["projects/ebondu/angular-keycloak/src/public_api"]
+    }
   },
   "files": [
     "src/test.ts",
-    "src/polyfills.ts"
   ],
   "include": [
     "**/*.spec.ts",
