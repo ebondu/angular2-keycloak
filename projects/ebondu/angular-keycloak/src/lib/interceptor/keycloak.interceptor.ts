@@ -61,7 +61,7 @@ export const keycloakInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>
                 });
                 return next(rptReq);
               }),
-              catchError(() => throwError(() => error))
+              catchError((secondError: unknown) => throwError(() => secondError))
             );
           }
           return throwError(() => error);
